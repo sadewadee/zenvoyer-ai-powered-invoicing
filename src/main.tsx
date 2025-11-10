@@ -22,6 +22,7 @@ import { ReportsPage } from '@/pages/app/ReportsPage';
 import { SettingsPage } from '@/pages/app/SettingsPage';
 import { SuperAdminPage } from '@/pages/admin/SuperAdminPage';
 import { SupportPage } from '@/pages/admin/SupportPage';
+import { PlatformSettingsPage } from '@/pages/admin/PlatformSettingsPage';
 import { PublicInvoicePage } from '@/pages/PublicInvoicePage';
 import { SetupWizardPage } from '@/pages/SetupWizardPage';
 const router = createBrowserRouter([
@@ -80,6 +81,10 @@ const router = createBrowserRouter([
       {
         path: "/admin/support",
         element: <SupportPage />,
+      },
+      {
+        path: "/admin/platform-settings",
+        element: <PlatformSettingsPage />,
       },
       {
         path: "/app/setup",

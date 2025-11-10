@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { v4 as uuidv4 } from 'uuid';
-import type { SessionInfo, ManagedUser, UserRole } from './types';
+import type { SessionInfo, ManagedUser, UserRole, PlatformSettings } from './types';
 import type { Env } from './core-utils';
 // In a real app, use a proper hashing library like bcrypt or Argon2.
 // This is a mock for demonstration purposes.
@@ -9,20 +9,30 @@ const mockVerify = (password: string, hash: string) => mockHash(password) === ha
 export class AppController extends DurableObject<Env> {
   private sessions = new Map<string, SessionInfo>();
   private users = new Map<string, ManagedUser>();
+  private platformSettings: PlatformSettings | undefined;
   private loaded = false;
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
   }
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) {
-      const stored = await this.ctx.storage.get<Map<string, any>>(['sessions', 'users']);
+      const stored = await this.ctx.storage.get<Map<string, any>>(['sessions', 'users', 'platformSettings']);
       this.sessions = new Map(Object.entries(stored.get('sessions') || {}));
       this.users = new Map(Object.entries(stored.get('users') || {}));
+      this.platformSettings = stored.get('platformSettings') as PlatformSettings | undefined;
       // Seed initial users if none exist
       if (this.users.size === 0) {
         this.seedInitialUsers();
-        await this.persist();
       }
+      if (!this.platformSettings) {
+        this.platformSettings = {
+          subscriptionGateways: {
+            Xendit: { name: 'Xendit', isEnabled: false, apiKey: '', apiSecret: '' },
+            Midtrans: { name: 'Midtrans', isEnabled: false, apiKey: '', apiSecret: '' },
+          }
+        };
+      }
+      await this.persist();
       this.loaded = true;
     }
   }
@@ -30,6 +40,7 @@ export class AppController extends DurableObject<Env> {
     await this.ctx.storage.put({
       sessions: Object.fromEntries(this.sessions),
       users: Object.fromEntries(this.users),
+      platformSettings: this.platformSettings,
     });
   }
   private seedInitialUsers() {
@@ -114,6 +125,17 @@ export class AppController extends DurableObject<Env> {
     }
     return null;
   }
+  // --- Platform Settings ---
+  async getPlatformSettings(): Promise<PlatformSettings> {
+    await this.ensureLoaded();
+    return this.platformSettings!;
+  }
+  async updatePlatformSettings(settings: Partial<PlatformSettings>): Promise<PlatformSettings> {
+    await this.ensureLoaded();
+    this.platformSettings = { ...this.platformSettings!, ...settings };
+    await this.persist();
+    return this.platformSettings!;
+  }
   // --- Session Management ---
   async addSession(sessionId: string, title?: string): Promise<void> {
     await this.ensureLoaded();
@@ -142,6 +164,17 @@ export class AppController extends DurableObject<Env> {
     const method = request.method;
     const path = url.pathname;
     try {
+      if (path.startsWith('/platform/settings')) {
+        if (method === 'GET') {
+          const settings = await this.getPlatformSettings();
+          return Response.json({ success: true, data: settings });
+        }
+        if (method === 'PUT') {
+          const body = await request.json<Partial<PlatformSettings>>();
+          const settings = await this.updatePlatformSettings(body);
+          return Response.json({ success: true, data: settings });
+        }
+      }
       if (path.startsWith('/sessions')) {
         if (method === 'GET') return Response.json({ success: true, data: await this.listSessions() });
         if (method === 'POST') {

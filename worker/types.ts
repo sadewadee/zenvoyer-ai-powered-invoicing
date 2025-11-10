@@ -89,6 +89,9 @@ export interface Settings {
   paymentGateways: Record<string, PaymentGateway>;
   theme: ThemeSettings;
 }
+export interface PlatformSettings {
+  subscriptionGateways: Record<string, PaymentGateway>;
+}
 // BusinessAgent State
 export interface BusinessState {
   invoices: Invoice[];

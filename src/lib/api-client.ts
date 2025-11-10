@@ -1,4 +1,4 @@
-import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole } from '@/types';
+import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole, PlatformSettings } from '@/types';
 import type { User } from './auth';
 const handleResponse = async (response: Response) => {
   const result = await response.json();
@@ -44,6 +44,9 @@ export const updateUserRole = (userId: string, role: UserRole) => api.put<Manage
 export const toggleUserStatus = (userId: string) => api.put<ManagedUser>(`/api/users/${userId}/status`);
 export const updateUserPlan = (userId: string, plan: 'Free' | 'Pro') => api.put<ManagedUser>(`/api/users/${userId}/plan`, { plan });
 export const updateUserProfile = (userId: string, profileData: { name: string; email: string }) => api.put<ManagedUser>(`/api/users/${userId}/profile`, profileData);
+// Platform Settings API
+export const getPlatformSettings = () => api.get<PlatformSettings>('/api/platform/settings');
+export const updatePlatformSettings = (settings: Partial<PlatformSettings>) => api.put<PlatformSettings>('/api/platform/settings', settings);
 // Business Data API
 const prepareInvoicePayload = (invoice: any) => ({
   ...invoice,

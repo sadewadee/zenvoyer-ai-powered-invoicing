@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, BarChart2,
-  Settings, LifeBuoy, Shield, Users as TeamIcon
+  Settings, LifeBuoy, Shield, SlidersHorizontal
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { UserRole, Permission } from '@/types';
@@ -27,6 +27,7 @@ const adminNav: NavItem[] = [
 ];
 const superAdminNav: NavItem[] = [
   { name: 'User Management', href: '/admin/super', icon: Shield, requiredRole: 'SUPER_ADMIN', requiredPermission: 'admin:super' },
+  { name: 'Platform Settings', href: '/admin/platform-settings', icon: SlidersHorizontal, requiredRole: 'SUPER_ADMIN', requiredPermission: 'admin:super' },
 ];
 const settingsNav: NavItem[] = [
   { name: 'Settings', href: '/app/settings', icon: Settings, requiredPermission: 'settings:view' },

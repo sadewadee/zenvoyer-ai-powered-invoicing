@@ -45,6 +45,15 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
     });
 }
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
+    // --- Platform Settings ---
+    app.get('/api/platform/settings', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.put('/api/platform/settings', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
     // --- User Auth & Management Routes ---
     app.post('/api/auth/login', async (c) => {
         const controller = getAppController(c.env);
