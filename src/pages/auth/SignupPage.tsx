@@ -18,7 +18,7 @@ export function SignupPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const success = await signup(name, email);
+      const success = await signup(name, email, password);
       if (success) {
         toast.success("Account created successfully!");
         navigate('/app/setup');

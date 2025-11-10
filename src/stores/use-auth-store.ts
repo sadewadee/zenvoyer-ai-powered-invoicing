@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { authService, User } from '@/lib/auth';
 import * as api from '@/lib/api-client';
+import { useUserManagementStore } from './use-user-management-store';
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string) => Promise<boolean>;
-  signup: (name: string, email: string) => Promise<boolean>;
+  login: (email: string, password?: string) => Promise<boolean>;
+  signup: (name: string, email: string, password?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => void;
   updateProfile: (profileData: { name: string; email: string }) => Promise<void>;
@@ -15,10 +16,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  login: async (email: string) => {
+  login: async (email: string, password?: string) => {
     set({ isLoading: true });
     try {
-      const user = await authService.login(email);
+      const user = await authService.login(email, password);
       if (user) {
         set({ user, isAuthenticated: true, isLoading: false });
         return true;
@@ -31,17 +32,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return false;
     }
   },
-  signup: async (name: string, email: string) => {
+  signup: async (name: string, email: string, password?: string) => {
     set({ isLoading: true });
     try {
-      const newUser = await api.signup(name, email);
-      const user = await authService.login(newUser.email);
-      if (user) {
-        set({ user, isAuthenticated: true, isLoading: false });
-        return true;
-      }
-      set({ isLoading: false });
-      return false;
+      const newUser = await api.signup(name, email, password);
+      // Add user to admin management store
+      useUserManagementStore.getState().addUser(newUser);
+      // Log in the new user directly from API response
+      const user: User = {
+        ...newUser,
+        avatarUrl: `https://i.pravatar.cc/150?u=${newUser.email}`
+      };
+      sessionStorage.setItem('zenvoyer_user_session', JSON.stringify(user));
+      set({ user, isAuthenticated: true, isLoading: false });
+      return true;
     } catch (error) {
       console.error("Signup failed:", error);
       set({ isLoading: false });

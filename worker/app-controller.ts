@@ -2,6 +2,10 @@ import { DurableObject } from 'cloudflare:workers';
 import { v4 as uuidv4 } from 'uuid';
 import type { SessionInfo, ManagedUser, UserRole } from './types';
 import type { Env } from './core-utils';
+// In a real app, use a proper hashing library like bcrypt or Argon2.
+// This is a mock for demonstration purposes.
+const mockHash = (password: string) => `hashed_${password}`;
+const mockVerify = (password: string, hash: string) => mockHash(password) === hash;
 export class AppController extends DurableObject<Env> {
   private sessions = new Map<string, SessionInfo>();
   private users = new Map<string, ManagedUser>();
@@ -30,21 +34,23 @@ export class AppController extends DurableObject<Env> {
   }
   private seedInitialUsers() {
     const initialUsers: ManagedUser[] = [
-      { id: 'user-123', name: 'Alex Johnson', email: 'user@zenitho.app', role: 'USER', status: 'Active', createdAt: new Date('2023-01-15').toISOString(), plan: 'Pro' },
-      { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenitho.app', role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20').toISOString(), plan: 'Pro' },
-      { id: 'super-789', name: 'Sam Chen', email: 'super@zenitho.app', role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01').toISOString(), plan: 'Pro' },
+      { id: 'user-123', name: 'Alex Johnson', email: 'user@zenvoyer.app', passwordHash: mockHash('password'), role: 'USER', status: 'Active', createdAt: new Date('2023-01-15').toISOString(), plan: 'Pro' },
+      { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenvoyer.app', passwordHash: mockHash('password'), role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20').toISOString(), plan: 'Pro' },
+      { id: 'super-789', name: 'Sam Chen', email: 'super@zenvoyer.app', passwordHash: mockHash('password'), role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01').toISOString(), plan: 'Pro' },
     ];
     initialUsers.forEach(user => this.users.set(user.id, user));
   }
   // --- User Management ---
-  async addUser(userData: { name: string; email: string }): Promise<ManagedUser> {
+  async addUser(userData: { name: string; email: string; password?: string }): Promise<ManagedUser> {
     await this.ensureLoaded();
     const existingUser = Array.from(this.users.values()).find(u => u.email === userData.email);
     if (existingUser) {
       throw new Error('User with this email already exists.');
     }
     const newUser: ManagedUser = {
-      ...userData,
+      name: userData.name,
+      email: userData.email,
+      passwordHash: mockHash(userData.password || 'default_password'),
       id: uuidv4(),
       role: 'USER',
       status: 'Active',
@@ -151,19 +157,23 @@ export class AppController extends DurableObject<Env> {
       }
       if (path.startsWith('/auth/login')) {
         if (method === 'POST') {
-          const { email } = await request.json<{ email: string }>();
+          const { email, password } = await request.json<{ email: string; password?: string }>();
           const user = await this.getUserByEmail(email);
-          if (user && user.status === 'Active') {
+          if (user && user.status === 'Active' && password && mockVerify(password, user.passwordHash)) {
             return Response.json({ success: true, data: user });
+          }
+          // Fallback for old email-only login for seeded users if no password provided
+          if (user && user.status === 'Active' && !password && user.email.includes('@zenvoyer.app')) {
+             return Response.json({ success: true, data: user });
           }
           return Response.json({ success: false, error: 'Invalid credentials or user banned.' }, { status: 401 });
         }
       }
       if (path.startsWith('/auth/signup')) {
         if (method === 'POST') {
-          const { name, email } = await request.json<{ name: string; email: string }>();
+          const { name, email, password } = await request.json<{ name: string; email: string; password?: string }>();
           try {
-            const newUser = await this.addUser({ name, email });
+            const newUser = await this.addUser({ name, email, password });
             return Response.json({ success: true, data: newUser });
           } catch (e) {
             return Response.json({ success: false, error: (e as Error).message }, { status: 409 });

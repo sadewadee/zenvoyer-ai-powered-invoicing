@@ -7,6 +7,7 @@ interface UserManagementState {
   isLoading: boolean;
   error: string | null;
   fetchUsers: () => Promise<void>;
+  addUser: (user: ManagedUser) => void;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
   toggleUserStatus: (userId: string) => Promise<void>;
   updateUserPlan: (userId: string, plan: 'Free' | 'Pro') => Promise<void>;
@@ -24,6 +25,11 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
     }
+  },
+  addUser: (user) => {
+    set(state => ({
+      users: [...state.users, { ...user, createdAt: new Date(user.createdAt) }]
+    }));
   },
   updateUserRole: async (userId, newRole) => {
     const originalUsers = get().users;

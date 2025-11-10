@@ -103,6 +103,7 @@ export interface ManagedUser {
   id: string;
   name: string;
   email: string;
+  passwordHash: string;
   role: UserRole;
   status: 'Active' | 'Banned';
   createdAt: string; // ISO string

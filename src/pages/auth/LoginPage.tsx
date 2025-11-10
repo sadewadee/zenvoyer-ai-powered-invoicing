@@ -8,6 +8,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useAuthStore } from "@/stores/use-auth-store";
 export function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
@@ -17,11 +18,11 @@ export function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      const success = await login(email);
+      const success = await login(email, password);
       if (success) {
         navigate('/app/dashboard');
       } else {
-        setError('Invalid email or user is banned.');
+        setError('Invalid email or password, or user is banned.');
       }
     } catch (err) {
       setError((err as Error).message || 'An unexpected error occurred.');
@@ -34,7 +35,7 @@ export function LoginPage() {
       <Card>
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your email to access your account.</CardDescription>
+          <CardDescription>Enter your email and password to access your account.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -43,14 +44,23 @@ export function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="user@zenitho.app"
+                placeholder="user@zenvoyer.app"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required />
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <p className="text-xs text-muted-foreground">
-              Initial users: user@zenitho.app, admin@zenitho.app, super@zenitho.app
+              Initial users: user@zenvoyer.app, admin@zenvoyer.app, super@zenvoyer.app (password: "password")
             </p>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
