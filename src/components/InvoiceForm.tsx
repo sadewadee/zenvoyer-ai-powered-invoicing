@@ -85,8 +85,8 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       ...item,
       total: (item.quantity || 0) * (item.unitPrice || 0),
     }));
-    const invoiceData = {
-      client: selectedClient,
+    const invoicePayload = {
+      clientId: selectedClient.id,
       issueDate: data.issueDate,
       dueDate: data.dueDate,
       lineItems: finalLineItems,
@@ -94,17 +94,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       tax: data.tax,
       amountPaid: data.amountPaid,
       status: data.status,
+      subtotal,
+      total,
       activityLog: invoice?.activityLog || [],
     };
     if (invoice) {
-      await updateInvoice({ ...invoice, ...invoiceData });
+      await updateInvoice({ ...invoice, ...invoicePayload, client: selectedClient });
     } else {
-      const { client, ...rest } = invoiceData;
-      const invoiceToAdd = {
-        ...rest,
-        clientId: client.id,
-      };
-      await addInvoice(invoiceToAdd as Omit<Invoice, 'id'>);
+      await addInvoice(invoicePayload);
     }
     onClose();
   }
