@@ -1,87 +1,77 @@
 import { create } from 'zustand';
-import { toast } from 'sonner';
-import type { Invoice, InvoiceStatus, ActivityLogEntry } from '@/types';
-import { getInvoices, addInvoice as apiAddInvoice, updateInvoice as apiUpdateInvoice, deleteInvoice as apiDeleteInvoice } from '@/lib/api-client';
+import { v4 as uuidv4 } from 'uuid';
+import type { Invoice, LineItem } from '@/types';
+import { useClientStore } from './use-client-store';
 interface InvoiceState {
   invoices: Invoice[];
-  isLoading: boolean;
-  error: string | null;
-  fetchInvoices: () => Promise<void>;
+  getInvoices: () => Invoice[];
   getInvoiceById: (id: string) => Invoice | undefined;
-  addInvoice: (invoice: Omit<Invoice, 'id'>, userId: string) => Promise<void>;
-  updateInvoice: (invoice: Invoice) => Promise<void>;
-  deleteInvoice: (id: string) => Promise<void>;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => void;
+  updateInvoice: (invoice: Invoice) => void;
+  deleteInvoice: (id: string) => void;
   getNextInvoiceNumber: () => string;
 }
+const calculateTotals = (lineItems: LineItem[], discount: number, tax: number) => {
+  const subtotal = lineItems.reduce((acc, item) => acc + item.total, 0);
+  const discountAmount = subtotal * (discount / 100);
+  const taxAmount = (subtotal - discountAmount) * (tax / 100);
+  const total = subtotal - discountAmount + taxAmount;
+  return { subtotal, total };
+};
+const initialClients = useClientStore.getState().clients;
+const initialInvoices: Invoice[] = [
+  {
+    id: 'inv-1',
+    invoiceNumber: 'INV-001',
+    client: initialClients[0],
+    issueDate: new Date('2023-10-25'),
+    dueDate: new Date('2023-11-25'),
+    lineItems: [{ id: 'li-1', description: 'Web Development', quantity: 1, unitPrice: 2500, total: 2500 }],
+    subtotal: 2500,
+    discount: 0,
+    tax: 10,
+    total: 2750,
+    status: 'Paid',
+  },
+  {
+    id: 'inv-2',
+    invoiceNumber: 'INV-002',
+    client: initialClients[1],
+    issueDate: new Date('2023-10-28'),
+    dueDate: new Date('2023-11-28'),
+    lineItems: [{ id: 'li-2', description: 'Arc Reactor Maintenance', quantity: 1, unitPrice: 1500, total: 1500 }],
+    subtotal: 1500,
+    discount: 0,
+    tax: 0,
+    total: 1500,
+    status: 'Unpaid',
+  },
+];
 export const useInvoiceStore = create<InvoiceState>((set, get) => ({
-  invoices: [],
-  isLoading: true,
-  error: null,
-  fetchInvoices: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const invoices = await getInvoices();
-      set({ invoices: invoices.map(i => ({...i, issueDate: new Date(i.issueDate), dueDate: new Date(i.dueDate)})), isLoading: false });
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      set({ error: errorMessage, isLoading: false });
-      toast.error("Failed to load invoices. Please try again later.");
-    }
-  },
+  invoices: initialInvoices,
+  getInvoices: () => get().invoices,
   getInvoiceById: (id) => get().invoices.find(inv => inv.id === id),
-  addInvoice: async (invoiceData, userId) => {
-    const newInvoice = await apiAddInvoice(invoiceData, userId);
-    set(state => ({ invoices: [...state.invoices, {...newInvoice, issueDate: new Date(newInvoice.issueDate), dueDate: new Date(newInvoice.dueDate)}] }));
+  addInvoice: (invoiceData) => {
+    const { subtotal, total } = calculateTotals(invoiceData.lineItems, invoiceData.discount, invoiceData.tax);
+    const newInvoice: Invoice = {
+      ...invoiceData,
+      id: uuidv4(),
+      invoiceNumber: get().getNextInvoiceNumber(),
+      subtotal,
+      total,
+    };
+    set(state => ({ invoices: [...state.invoices, newInvoice] }));
   },
-  updateInvoice: async (updatedInvoice) => {
-    const originalInvoice = get().getInvoiceById(updatedInvoice.id);
-    if (!originalInvoice) return;
-    const newActivityLog: ActivityLogEntry[] = [];
-    // Check for status change
-    if (originalInvoice.status !== updatedInvoice.status) {
-      newActivityLog.push({
-        date: new Date(),
-        action: `Status changed from ${originalInvoice.status} to ${updatedInvoice.status}`,
-      });
-    }
-    // Check for payment
-    const paymentMade = updatedInvoice.amountPaid - originalInvoice.amountPaid;
-    if (paymentMade > 0) {
-      newActivityLog.push({
-        date: new Date(),
-        action: `Payment of ${paymentMade.toFixed(2)} received.`,
-      });
-    }
-    // Auto-update status based on payment, but don't override a manual status change in the same update
-    let newStatus: InvoiceStatus = updatedInvoice.status;
-    if (updatedInvoice.amountPaid <= 0 && updatedInvoice.status !== 'Draft' && updatedInvoice.status !== 'Overdue') {
-      newStatus = 'Unpaid';
-    } else if (updatedInvoice.amountPaid > 0 && updatedInvoice.amountPaid < updatedInvoice.total) {
-      newStatus = 'Partial';
-    } else if (updatedInvoice.amountPaid >= updatedInvoice.total) {
-      newStatus = 'Paid';
-    }
-    if (updatedInvoice.status !== newStatus && originalInvoice.status === updatedInvoice.status) {
-       if (originalInvoice.status !== 'Overdue' || newStatus === 'Paid') {
-         updatedInvoice.status = newStatus;
-         if (originalInvoice.status !== newStatus) {
-            newActivityLog.push({
-              date: new Date(),
-              action: `Status automatically updated to ${newStatus}.`,
-            });
-         }
-       }
-    }
-    updatedInvoice.activityLog = [...newActivityLog, ...updatedInvoice.activityLog];
-    const returnedInvoice = await apiUpdateInvoice(updatedInvoice);
+  updateInvoice: (updatedInvoice) => {
+    const { subtotal, total } = calculateTotals(updatedInvoice.lineItems, updatedInvoice.discount, updatedInvoice.tax);
+    const finalInvoice = { ...updatedInvoice, subtotal, total };
     set(state => ({
       invoices: state.invoices.map(invoice =>
-        invoice.id === returnedInvoice.id ? {...returnedInvoice, issueDate: new Date(returnedInvoice.issueDate), dueDate: new Date(returnedInvoice.dueDate)} : invoice
+        invoice.id === finalInvoice.id ? finalInvoice : invoice
       ),
     }));
   },
-  deleteInvoice: async (id) => {
-    await apiDeleteInvoice(id);
+  deleteInvoice: (id) => {
     set(state => ({
       invoices: state.invoices.filter(invoice => invoice.id !== id),
     }));
@@ -96,5 +86,3 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     return `INV-${(lastInvoiceNumber + 1).toString().padStart(3, '0')}`;
   },
 }));
-// Initial fetch
-useInvoiceStore.getState().fetchInvoices();

@@ -1,51 +1,37 @@
 import { create } from 'zustand';
-import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 import type { Client } from '@/types';
-import { getClients, addClient as apiAddClient, updateClient as apiUpdateClient, deleteClient as apiDeleteClient } from '@/lib/api-client';
 interface ClientState {
   clients: Client[];
-  isLoading: boolean;
-  error: string | null;
-  fetchClients: () => Promise<void>;
+  getClients: () => Client[];
   getClientById: (id: string) => Client | undefined;
-  addClient: (client: Omit<Client, 'id'>) => Promise<void>;
-  updateClient: (client: Client) => Promise<void>;
-  deleteClient: (id: string) => Promise<void>;
+  addClient: (client: Omit<Client, 'id'>) => void;
+  updateClient: (client: Client) => void;
+  deleteClient: (id: string) => void;
 }
+const initialClients: Client[] = [
+  { id: 'client-1', name: 'Acme Inc.', email: 'contact@acme.com', address: '123 Acme St, Business City, USA', phone: '555-0101' },
+  { id: 'client-2', name: 'Stark Industries', email: 'tony@starkindustries.com', address: '10880 Malibu Point, 90265, CA', phone: '555-0102' },
+  { id: 'client-3', name: 'Wayne Enterprises', email: 'bruce@wayne-enterprises.com', address: '1007 Mountain Drive, Gotham City', phone: '555-0103' },
+];
 export const useClientStore = create<ClientState>((set, get) => ({
-  clients: [],
-  isLoading: true,
-  error: null,
-  fetchClients: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const clients = await getClients();
-      set({ clients, isLoading: false });
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      set({ error: errorMessage, isLoading: false });
-      toast.error("Failed to load clients. Please try again later.");
-    }
-  },
+  clients: initialClients,
+  getClients: () => get().clients,
   getClientById: (id) => get().clients.find(c => c.id === id),
-  addClient: async (client) => {
-    const newClient = await apiAddClient(client);
+  addClient: (client) => {
+    const newClient = { ...client, id: uuidv4() };
     set(state => ({ clients: [...state.clients, newClient] }));
   },
-  updateClient: async (updatedClient) => {
-    const returnedClient = await apiUpdateClient(updatedClient);
+  updateClient: (updatedClient) => {
     set(state => ({
       clients: state.clients.map(client =>
-        client.id === returnedClient.id ? returnedClient : client
+        client.id === updatedClient.id ? updatedClient : client
       ),
     }));
   },
-  deleteClient: async (id) => {
-    await apiDeleteClient(id);
+  deleteClient: (id) => {
     set(state => ({
       clients: state.clients.filter(client => client.id !== id),
     }));
   },
 }));
-// Initial fetch
-useClientStore.getState().fetchClients();

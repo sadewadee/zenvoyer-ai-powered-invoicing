@@ -15,6 +15,7 @@ import { ProtectedRoutes } from '@/components/ProtectedRoutes';
 import { DashboardPage } from '@/pages/app/DashboardPage';
 import { InvoicesPage } from '@/pages/app/InvoicesPage';
 import { ClientsPage } from '@/pages/app/ClientsPage';
+import { ProductsPage } from '@/pages/app/ProductsPage';
 import { SettingsPage } from '@/pages/app/SettingsPage';
 import { SuperAdminPage } from '@/pages/admin/SuperAdminPage';
 import { SupportPage } from '@/pages/admin/SupportPage';
@@ -49,7 +50,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/app/products",
-        element: <div>Products Page Placeholder</div>, // Simple placeholder for now
+        element: <ProductsPage />,
       },
       {
         path: "/app/settings",

@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useForm, useFieldArray, useWatch, Resolver } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,31 +9,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useClientStore } from '@/stores/use-client-store';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
-import { usePermissions } from '@/hooks/use-permissions';
-import { useSubscription } from '@/hooks/use-subscription';
-import { useAuthStore } from '@/stores/use-auth-store';
+import { useEffect } from 'react';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
-  quantity: z.coerce.number().min(1, 'Quantity must be > 0').default(1),
-  unitPrice: z.coerce.number().min(0.01, 'Price must be > 0').default(0.01),
-  total: z.number().optional(),
+  quantity: z.coerce.number().min(0.01, 'Quantity must be > 0'),
+  unitPrice: z.coerce.number().min(0.01, 'Price must be > 0'),
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
-  issueDate: z.date(),
-  dueDate: z.date(),
+  issueDate: z.date({ required_error: 'Issue date is required' }),
+  dueDate: z.date({ required_error: 'Due date is required' }),
   lineItems: z.array(lineItemSchema).min(1, 'At least one line item is required'),
   discount: z.coerce.number().min(0).max(100).default(0),
   tax: z.coerce.number().min(0).max(100).default(0),
-  amountPaid: z.coerce.number().min(0).default(0),
   status: z.enum(['Paid', 'Unpaid', 'Overdue', 'Draft', 'Partial']),
 });
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
@@ -44,15 +39,9 @@ interface InvoiceFormProps {
 }
 export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const clients = useClientStore(state => state.clients);
-  const addInvoice = useInvoiceStore(state => state.addInvoice);
-  const updateInvoice = useInvoiceStore(state => state.updateInvoice);
-  const getNextInvoiceNumber = useInvoiceStore(state => state.getNextInvoiceNumber);
-  const { can } = usePermissions();
-  const { isPro } = useSubscription();
-  const user = useAuthStore(state => state.user);
-  const readOnly = !can('invoices:edit');
+  const { addInvoice, updateInvoice } = useInvoiceStore();
   const form = useForm<InvoiceFormValues>({
-    resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
+    resolver: zodResolver(invoiceSchema),
     defaultValues: invoice
       ? {
           clientId: invoice.client.id,
@@ -61,17 +50,15 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           lineItems: invoice.lineItems.map(item => ({ ...item })),
           discount: invoice.discount,
           tax: invoice.tax,
-          amountPaid: invoice.amountPaid || 0,
           status: invoice.status,
         }
       : {
           clientId: '',
           issueDate: new Date(),
           dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-          lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01, total: 0.01 }],
+          lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0 }],
           discount: 0,
           tax: 10,
-          amountPaid: 0,
           status: 'Draft',
         },
   });
@@ -79,58 +66,31 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
     control: form.control,
     name: 'lineItems',
   });
-  const { isSubmitting } = form.formState;
-  const watchedValues = useWatch({ control: form.control });
-  const subtotal = (watchedValues.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
-  const discountAmount = subtotal * ((watchedValues.discount || 0) / 100);
-  const taxAmount = (subtotal - discountAmount) * ((watchedValues.tax || 0) / 100);
+  const watchLineItems = form.watch('lineItems');
+  const watchDiscount = form.watch('discount');
+  const watchTax = form.watch('tax');
+  const subtotal = watchLineItems.reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
+  const discountAmount = subtotal * (watchDiscount / 100);
+  const taxAmount = (subtotal - discountAmount) * (watchTax / 100);
   const total = subtotal - discountAmount + taxAmount;
-  const balanceDue = total - (watchedValues.amountPaid || 0);
-  async function onSubmit(data: InvoiceFormValues) {
+  function onSubmit(data: InvoiceFormValues) {
     const selectedClient = clients.find(c => c.id === data.clientId);
-    if (!selectedClient) {
-      console.error("Client not found");
-      return;
-    }
-    const finalLineItems = data.lineItems.map(item => ({
-      ...item,
-      total: (item.quantity || 0) * (item.unitPrice || 0),
-    }));
+    if (!selectedClient) return;
+    const invoiceData = {
+      client: selectedClient,
+      issueDate: data.issueDate,
+      dueDate: data.dueDate,
+      lineItems: data.lineItems.map(item => ({ ...item, total: item.quantity * item.unitPrice })),
+      discount: data.discount,
+      tax: data.tax,
+      status: data.status,
+      subtotal: 0, // Will be recalculated in the store
+      total: 0, // Will be recalculated in the store
+    };
     if (invoice) {
-      const payload: Invoice = {
-        ...invoice,
-        client: selectedClient,
-        issueDate: data.issueDate,
-        dueDate: data.dueDate,
-        lineItems: finalLineItems,
-        discount: data.discount,
-        tax: data.tax,
-        amountPaid: data.amountPaid,
-        status: data.status,
-        subtotal,
-        total,
-      };
-      await updateInvoice(payload);
+      updateInvoice({ ...invoice, ...invoiceData });
     } else {
-      if (!user) {
-        console.error("User not found");
-        return;
-      }
-      const payload: Omit<Invoice, 'id'> = {
-        invoiceNumber: getNextInvoiceNumber(),
-        client: selectedClient,
-        issueDate: data.issueDate,
-        dueDate: data.dueDate,
-        lineItems: finalLineItems,
-        discount: data.discount,
-        tax: data.tax,
-        amountPaid: data.amountPaid,
-        status: data.status,
-        subtotal,
-        total,
-        activityLog: [{ date: new Date(), action: 'Invoice Created' }],
-      };
-      await addInvoice(payload, user.id);
+      addInvoice(invoiceData);
     }
     onClose();
   }
@@ -144,7 +104,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Client</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly}>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a client" />
@@ -169,14 +129,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={readOnly}>
+                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={readOnly} />
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -192,14 +152,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={readOnly}>
+                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={readOnly} />
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -223,35 +183,19 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               {fields.map((field, index) => (
                 <TableRow key={field.id}>
                   <TableCell>
-                    <FormField
-                      control={form.control}
-                      name={`lineItems.${index}.description`}
-                      render={({ field }) => <Input {...field} placeholder="Item description" disabled={readOnly} />}
-                    />
+                    <Input {...form.register(`lineItems.${index}.description`)} placeholder="Item description" />
                   </TableCell>
                   <TableCell>
-                    <FormField
-                      control={form.control}
-                      name={`lineItems.${index}.quantity`}
-                      render={({ field }) => (
-                        <Input type="number" {...field} placeholder="1" disabled={readOnly} />
-                      )}
-                    />
+                    <Input type="number" {...form.register(`lineItems.${index}.quantity`)} placeholder="1" />
                   </TableCell>
                   <TableCell>
-                    <FormField
-                      control={form.control}
-                      name={`lineItems.${index}.unitPrice`}
-                      render={({ field }) => (
-                        <Input type="number" step="0.01" {...field} placeholder="0.00" disabled={readOnly} />
-                      )}
-                    />
+                    <Input type="number" {...form.register(`lineItems.${index}.unitPrice`)} placeholder="0.00" />
                   </TableCell>
                   <TableCell>
-                    ${((watchedValues.lineItems?.[index]?.quantity || 0) * (watchedValues.lineItems?.[index]?.unitPrice || 0)).toFixed(2)}
+                    ${((watchLineItems[index]?.quantity || 0) * (watchLineItems[index]?.unitPrice || 0)).toFixed(2)}
                   </TableCell>
                   <TableCell>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1 || readOnly}>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -259,11 +203,9 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               ))}
             </TableBody>
           </Table>
-          {!readOnly && (
-            <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01, total: 0.01 })}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-            </Button>
-          )}
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0 })}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+          </Button>
         </div>
         <div className="flex justify-end">
           <div className="w-full max-w-sm space-y-4">
@@ -271,13 +213,13 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <FormField control={form.control} name="discount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Discount (%)</FormLabel>
-                  <FormControl><Input type="number" {...field} disabled={readOnly} /></FormControl>
+                  <FormControl><Input type="number" {...field} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="tax" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tax (%)</FormLabel>
-                  <FormControl><Input type="number" {...field} disabled={readOnly} /></FormControl>
+                  <FormControl><Input type="number" {...field} /></FormControl>
                 </FormItem>
               )} />
             </div>
@@ -285,15 +227,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>Discount</span><span>-${discountAmount.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>Tax</span><span>+${taxAmount.toFixed(2)}</span></div>
-              <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span>${total.toFixed(2)}</span></div>
-              <FormField control={form.control} name="amountPaid" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount Paid</FormLabel>
-                  <FormControl><Input type="number" {...field} disabled={readOnly || !isPro} /></FormControl>
-                  {!isPro && <FormDescription className="text-xs">Partial payments are a Pro feature.</FormDescription>}
-                </FormItem>
-              )} />
-              <div className="flex justify-between font-bold text-lg text-primary-700 dark:text-primary-400"><span>Balance Due</span><span>${balanceDue.toFixed(2)}</span></div>
+              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>${total.toFixed(2)}</span></div>
             </div>
           </div>
         </div>
@@ -303,7 +237,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           render={({ field }) => (
             <FormItem className="w-full max-w-xs">
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly || (watchedValues.amountPaid || 0) > 0}>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                 </FormControl>
@@ -313,13 +247,12 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {(watchedValues.amountPaid || 0) > 0 && <FormDescription className="text-xs">Status is automatically updated based on payment.</FormDescription>}
             </FormItem>
           )}
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          {!readOnly && <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : (invoice ? 'Update Invoice' : 'Create Invoice')}</Button>}
+          <Button type="submit">{invoice ? 'Update Invoice' : 'Create Invoice'}</Button>
         </div>
       </form>
     </Form>
