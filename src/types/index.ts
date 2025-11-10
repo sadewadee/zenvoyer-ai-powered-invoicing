@@ -1,4 +1,4 @@
-import { UserRole } from "@/lib/auth";
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER' | 'SUB_USER';
 export type InvoiceStatus = 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Partial';
 export type Permission =
   | 'dashboard:view'

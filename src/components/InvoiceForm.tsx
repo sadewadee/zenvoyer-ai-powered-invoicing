@@ -19,8 +19,8 @@ import type { Invoice, Client } from '@/types';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
-  quantity: z.coerce.number().min(0.01, 'Quantity must be > 0'),
-  unitPrice: z.coerce.number().min(0.01, 'Price must be > 0'),
+  quantity: z.coerce.number().min(0.01, 'Quantity must be > 0').default(1),
+  unitPrice: z.coerce.number().min(0.01, 'Price must be > 0').default(0.01),
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
@@ -99,9 +99,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
     if (invoice) {
       await updateInvoice({ ...invoice, ...invoiceData });
     } else {
-      // The API expects a payload without id, invoiceNumber, etc.
-      const { id, invoiceNumber, subtotal, total, ...invoiceToAdd } = invoiceData as any;
-      await addInvoice(invoiceToAdd);
+      const { id, invoiceNumber, subtotal, total, ...invoiceToAdd } = {
+        ...invoiceData,
+        id: '', // placeholder
+        invoiceNumber: '', // placeholder
+        subtotal: 0, // placeholder
+        total: 0, // placeholder
+      };
+      await addInvoice(invoiceToAdd as Omit<Invoice, 'id'>);
     }
     onClose();
   }

@@ -17,7 +17,7 @@ import type { Product } from "@/types";
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().optional(),
-  unitPrice: z.coerce.number().min(0.01, "Price must be greater than 0."),
+  unitPrice: z.coerce.number().min(0.01, "Price must be greater than 0.").default(0.01),
   category: z.string().optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -28,14 +28,14 @@ export function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", unitPrice: 0, category: "" },
+    defaultValues: { name: "", description: "", unitPrice: 0.01, category: "" },
   });
   const handleOpenForm = (product?: Product) => {
     setSelectedProduct(product);
     if (product) {
       form.reset(product);
     } else {
-      form.reset({ name: "", description: "", unitPrice: 0, category: "" });
+      form.reset({ name: "", description: "", unitPrice: 0.01, category: "" });
     }
     setIsFormOpen(true);
   };

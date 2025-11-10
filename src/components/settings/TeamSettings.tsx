@@ -13,55 +13,73 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useTeamStore } from '@/stores/use-team-store';
-import type { SubUser, SubUserPermissions } from '@/types';
+import type { SubUser, Permission } from '@/types';
 import { Toaster, toast } from 'sonner';
-const permissionsSchema = z.object({
-  canViewInvoices: z.boolean(),
-  canCreateInvoice: z.boolean(),
-  canEditInvoice: z.boolean(),
-  canDeleteInvoice: z.boolean(),
-  canManageClients: z.boolean(),
-});
+const userPermissions: { id: Permission; label: string; group: string }[] = [
+  { id: 'dashboard:view', label: 'View Dashboard', group: 'General' },
+  { id: 'invoices:view', label: 'View Invoices', group: 'Invoices' },
+  { id: 'invoices:create', label: 'Create Invoices', group: 'Invoices' },
+  { id: 'invoices:edit', label: 'Edit Invoices', group: 'Invoices' },
+  { id: 'invoices:delete', label: 'Delete Invoices', group: 'Invoices' },
+  { id: 'clients:view', label: 'View Clients', group: 'Clients' },
+  { id: 'clients:create', label: 'Create Clients', group: 'Clients' },
+  { id: 'clients:edit', label: 'Edit Clients', group: 'Clients' },
+  { id: 'clients:delete', label: 'Delete Clients', group: 'Clients' },
+  { id: 'products:view', label: 'View Products', group: 'Products' },
+  { id: 'products:create', label: 'Create Products', group: 'Products' },
+  { id: 'products:edit', label: 'Edit Products', group: 'Products' },
+  { id: 'products:delete', label: 'Delete Products', group: 'Products' },
+  { id: 'reports:view', label: 'View Reports', group: 'General' },
+  { id: 'settings:view', label: 'View Settings', group: 'General' },
+];
+const permissionsSchema = z.object(
+  userPermissions.reduce((acc, perm) => {
+    acc[perm.id] = z.boolean().default(false);
+    return acc;
+  }, {} as Record<Permission, z.ZodBoolean>)
+);
 const teamMemberSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
   email: z.string().email('A valid email is required.'),
   permissions: permissionsSchema,
 });
 type TeamMemberFormValues = z.infer<typeof teamMemberSchema>;
-const permissionLabels: { id: keyof SubUserPermissions; label: string }[] = [
-  { id: 'canViewInvoices', label: 'View Invoices' },
-  { id: 'canCreateInvoice', label: 'Create Invoices' },
-  { id: 'canEditInvoice', label: 'Edit Invoices' },
-  { id: 'canDeleteInvoice', label: 'Delete Invoices' },
-  { id: 'canManageClients', label: 'Manage Clients' },
-];
+const permissionGroups = userPermissions.reduce((acc, perm) => {
+  if (!acc[perm.group]) {
+    acc[perm.group] = [];
+  }
+  acc[perm.group].push(perm);
+  return acc;
+}, {} as Record<string, { id: Permission; label: string }[]>);
 export function TeamSettings() {
   const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<SubUser | undefined>(undefined);
+  const defaultPermissions = userPermissions.reduce((acc, perm) => {
+    acc[perm.id] = perm.id === 'dashboard:view';
+    return acc;
+  }, {} as Record<Permission, boolean>);
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberSchema),
     defaultValues: {
       name: '',
       email: '',
-      permissions: {
-        canViewInvoices: true,
-        canCreateInvoice: false,
-        canEditInvoice: false,
-        canDeleteInvoice: false,
-        canManageClients: false,
-      },
+      permissions: defaultPermissions as any,
     },
   });
   const handleOpenForm = (member?: SubUser) => {
     setSelectedMember(member);
     if (member) {
-      form.reset(member);
+      form.reset({
+        name: member.name,
+        email: member.email,
+        permissions: { ...defaultPermissions, ...member.permissions } as any,
+      });
     } else {
       form.reset({
         name: '',
         email: '',
-        permissions: { canViewInvoices: true, canCreateInvoice: false, canEditInvoice: false, canDeleteInvoice: false, canManageClients: false },
+        permissions: defaultPermissions as any,
       });
     }
     setIsFormOpen(true);
@@ -142,7 +160,7 @@ export function TeamSettings() {
         </CardContent>
       </Card>
       <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleCloseForm()}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selectedMember ? 'Edit Permissions' : 'Invite New Member'}</DialogTitle>
             <DialogDescription>
@@ -151,27 +169,34 @@ export function TeamSettings() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
-              )} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
               <div>
                 <FormLabel>Permissions</FormLabel>
-                <div className="space-y-2 mt-2 rounded-md border p-4">
-                  {permissionLabels.map((p) => (
-                    <FormField
-                      key={p.id}
-                      control={form.control}
-                      name={`permissions.${p.id}`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                          <FormLabel className="font-normal">{p.label}</FormLabel>
-                        </FormItem>
-                      )}
-                    />
+                <div className="mt-2 rounded-md border p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-64 overflow-y-auto">
+                  {Object.entries(permissionGroups).map(([groupName, perms]) => (
+                    <div key={groupName} className="space-y-2">
+                      <h4 className="font-medium text-sm">{groupName}</h4>
+                      {perms.map((p) => (
+                        <FormField
+                          key={p.id}
+                          control={form.control}
+                          name={`permissions.${p.id}`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                              <FormLabel className="font-normal text-sm">{p.label}</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
                   ))}
                 </div>
               </div>
