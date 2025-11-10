@@ -1,4 +1,4 @@
-import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,6 +21,7 @@ const lineItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   quantity: z.coerce.number().min(1, 'Quantity must be > 0').default(1),
   unitPrice: z.coerce.number().min(0.01, 'Price must be > 0').default(0.01),
+  total: z.number().optional(),
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
@@ -42,7 +43,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const addInvoice = useInvoiceStore(state => state.addInvoice);
   const updateInvoice = useInvoiceStore(state => state.updateInvoice);
   const form = useForm<InvoiceFormValues>({
-    resolver: zodResolver(invoiceSchema),
+    resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
     defaultValues: invoice
       ? {
           clientId: invoice.client.id,
@@ -58,7 +59,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           clientId: '',
           issueDate: new Date(),
           dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-          lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01 }],
+          lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01, total: 0.01 }],
           discount: 0,
           tax: 10,
           amountPaid: 0,
@@ -85,38 +86,24 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       ...item,
       total: (item.quantity || 0) * (item.unitPrice || 0),
     }));
+    const invoicePayload = {
+      client: selectedClient,
+      issueDate: data.issueDate,
+      dueDate: data.dueDate,
+      lineItems: finalLineItems,
+      discount: data.discount,
+      tax: data.tax,
+      amountPaid: data.amountPaid,
+      status: data.status,
+      subtotal,
+      total,
+    };
     if (invoice) {
-      const invoicePayload = {
+      await updateInvoice({
         ...invoice,
-        clientId: selectedClient.id,
-        client: selectedClient,
-        issueDate: data.issueDate.toISOString(),
-        dueDate: data.dueDate.toISOString(),
-        lineItems: finalLineItems,
-        discount: data.discount,
-        tax: data.tax,
-        amountPaid: data.amountPaid,
-        status: data.status,
-        subtotal,
-        total,
-      };
-      await updateInvoice(invoicePayload);
+        ...invoicePayload,
+      });
     } else {
-      const invoicePayload = {
-        client: selectedClient,
-        clientId: selectedClient.id,
-        issueDate: data.issueDate.toISOString(),
-        dueDate: data.dueDate.toISOString(),
-        lineItems: finalLineItems,
-        discount: data.discount,
-        tax: data.tax,
-        amountPaid: data.amountPaid,
-        status: data.status,
-        subtotal,
-        total,
-        invoiceNumber: `INV-${Date.now()}`, // Placeholder for invoice number generation
-        activityLog: [],
-      };
       await addInvoice(invoicePayload);
     }
     onClose();
@@ -236,6 +223,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                       render={({ field }) => (
                         <Input
                           type="number"
+                          step="0.01"
                           {...field}
                           placeholder="0.00"
                         />
@@ -254,7 +242,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               ))}
             </TableBody>
           </Table>
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01 })}>
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01, total: 0.01 })}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add Item
           </Button>
         </div>
