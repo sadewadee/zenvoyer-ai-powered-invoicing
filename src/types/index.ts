@@ -23,6 +23,7 @@ export interface Invoice {
   discount: number; // as a percentage
   tax: number; // as a percentage
   total: number;
+  amountPaid: number;
   status: InvoiceStatus;
   activityLog: ActivityLogEntry[];
 }

@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { useClientStore } from '@/stores/use-client-store';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
+import { useEffect } from 'react';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
@@ -48,7 +49,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           clientId: invoice.client.id,
           issueDate: new Date(invoice.issueDate),
           dueDate: new Date(invoice.dueDate),
-          lineItems: invoice.lineItems.map(item => ({ ...item })),
+          lineItems: invoice.lineItems.map(item => ({ ...item, total: undefined })), // Remove total for form state
           discount: invoice.discount,
           tax: invoice.tax,
           amountPaid: invoice.amountPaid || 0,
@@ -58,7 +59,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           clientId: '',
           issueDate: new Date(),
           dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-          lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0 }],
+          lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01 }],
           discount: 0,
           tax: 10,
           amountPaid: 0,
@@ -69,35 +70,45 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
     control: form.control,
     name: 'lineItems',
   });
-  const watchLineItems = form.watch('lineItems');
-  const watchDiscount = form.watch('discount');
-  const watchTax = form.watch('tax');
-  const watchAmountPaid = form.watch('amountPaid');
-  const subtotal = watchLineItems.reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
-  const discountAmount = subtotal * ((watchDiscount || 0) / 100);
-  const taxAmount = (subtotal - discountAmount) * ((watchTax || 0) / 100);
+  const watchedValues = useWatch({ control: form.control });
+  const subtotal = (watchedValues.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
+  const discountAmount = subtotal * ((watchedValues.discount || 0) / 100);
+  const taxAmount = (subtotal - discountAmount) * ((watchedValues.tax || 0) / 100);
   const total = subtotal - discountAmount + taxAmount;
-  const balanceDue = total - (watchAmountPaid || 0);
+  const balanceDue = total - (watchedValues.amountPaid || 0);
   async function onSubmit(data: InvoiceFormValues) {
     const selectedClient = clients.find(c => c.id === data.clientId);
-    if (!selectedClient) return;
+    if (!selectedClient) {
+      console.error("Client not found");
+      return;
+    }
+    const finalLineItems = data.lineItems.map(item => ({
+      ...item,
+      total: (item.quantity || 0) * (item.unitPrice || 0),
+    }));
+    const finalSubtotal = finalLineItems.reduce((acc, item) => acc + item.total, 0);
+    const finalDiscountAmount = finalSubtotal * (data.discount / 100);
+    const finalTaxAmount = (finalSubtotal - finalDiscountAmount) * (data.tax / 100);
+    const finalTotal = finalSubtotal - finalDiscountAmount + finalTaxAmount;
     const invoiceData = {
       client: selectedClient,
       issueDate: data.issueDate,
       dueDate: data.dueDate,
-      lineItems: data.lineItems.map(item => ({ ...item, total: item.quantity * item.unitPrice })),
+      lineItems: finalLineItems,
       discount: data.discount,
       tax: data.tax,
       amountPaid: data.amountPaid,
       status: data.status,
-      subtotal: 0,
-      total: 0,
+      subtotal: finalSubtotal,
+      total: finalTotal,
+      activityLog: invoice?.activityLog || [], // Preserve existing log
     };
     if (invoice) {
       await updateInvoice({ ...invoice, ...invoiceData });
     } else {
-      // @ts-ignore
-      await addInvoice(invoiceData);
+      // The store handles id, invoiceNumber, and initial activityLog
+      const { id, invoiceNumber, activityLog, ...invoiceToAdd } = invoiceData as any;
+      await addInvoice(invoiceToAdd);
     }
     onClose();
   }
@@ -190,16 +201,28 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               {fields.map((field, index) => (
                 <TableRow key={field.id}>
                   <TableCell>
-                    <Input {...form.register(`lineItems.${index}.description`)} placeholder="Item description" />
+                    <FormField
+                      control={form.control}
+                      name={`lineItems.${index}.description`}
+                      render={({ field }) => <Input {...field} placeholder="Item description" />}
+                    />
                   </TableCell>
                   <TableCell>
-                    <Input type="number" {...form.register(`lineItems.${index}.quantity`)} placeholder="1" />
+                    <FormField
+                      control={form.control}
+                      name={`lineItems.${index}.quantity`}
+                      render={({ field }) => <Input type="number" {...field} placeholder="1" />}
+                    />
                   </TableCell>
                   <TableCell>
-                    <Input type="number" {...form.register(`lineItems.${index}.unitPrice`)} placeholder="0.00" />
+                    <FormField
+                      control={form.control}
+                      name={`lineItems.${index}.unitPrice`}
+                      render={({ field }) => <Input type="number" {...field} placeholder="0.00" />}
+                    />
                   </TableCell>
                   <TableCell>
-                    ${((watchLineItems[index]?.quantity || 0) * (watchLineItems[index]?.unitPrice || 0)).toFixed(2)}
+                    ${((watchedValues.lineItems?.[index]?.quantity || 0) * (watchedValues.lineItems?.[index]?.unitPrice || 0)).toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
@@ -210,7 +233,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               ))}
             </TableBody>
           </Table>
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0 })}>
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01 })}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add Item
           </Button>
         </div>

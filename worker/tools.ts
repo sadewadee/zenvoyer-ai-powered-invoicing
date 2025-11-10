@@ -1,7 +1,9 @@
-import type { WeatherResult, ErrorResult } from './types';
 import { mcpManager } from './mcp-client';
 
-export type ToolResult = WeatherResult | { content: string } | ErrorResult;
+export type ToolResult =
+  | { location: string; temperature: number; condition: string; humidity: number }
+  | { content: string }
+  | { error: string };
 
 interface SerpApiResponse {
   knowledge_graph?: { title?: string; description?: string; source?: { link?: string } };

@@ -52,7 +52,14 @@ export function ProductsPage() {
     if (selectedProduct) {
       updateProduct({ ...selectedProduct, ...productData });
     } else {
-      addProduct(productData);
+      // The addProduct function in the store expects an object that can be extended into a full Product.
+      // The store will add the 'id'. We pass the form values that match the creation payload.
+      addProduct({
+        name: productData.name,
+        description: productData.description,
+        unitPrice: productData.unitPrice,
+        category: productData.category,
+      });
     }
     handleCloseForm();
   };

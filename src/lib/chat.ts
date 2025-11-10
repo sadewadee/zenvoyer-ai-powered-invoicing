@@ -1,4 +1,4 @@
-import type { Message, ChatState, ToolCall, WeatherResult, MCPResult, ErrorResult, SessionInfo } from '../../worker/types';
+import type { Message, ChatState, ToolCall, SessionInfo } from '../../worker/types';
 
 export interface ChatResponse {
   success: boolean;
@@ -221,13 +221,13 @@ export const generateSessionTitle = (firstUserMessage?: string): string => {
 };
 
 export const renderToolCall = (toolCall: ToolCall): string => {
-  const result = toolCall.result as WeatherResult | MCPResult | ErrorResult | undefined;
-  
+  const result = toolCall.result as any;
+
   if (!result) return `⚠️ ${toolCall.name}: No result`;
-  if ('error' in result) return `❌ ${toolCall.name}: ${result.error}`;
-  if ('content' in result) return `🔧 ${toolCall.name}: Executed`;
+  if (result.error) return `❌ ${toolCall.name}: ${result.error}`;
+  if (result.content) return `🔧 ${toolCall.name}: Executed`;
   if (toolCall.name === 'get_weather') {
-    const weather = result as WeatherResult;
+    const weather = result;
     return `🌤️ Weather in ${weather.location}: ${weather.temperature}°C, ${weather.condition}`;
   }
 
