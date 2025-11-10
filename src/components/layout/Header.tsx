@@ -7,24 +7,24 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuTrigger } from
+'@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from "../../lib/auth";
 import { useNavigate } from 'react-router-dom';
 interface HeaderProps {
   title: string;
 }
 export function Header({ title }: HeaderProps) {
-  const user = useAuthStore(state => state.user);
-  const logout = useAuthStore(state => state.logout);
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name.split(' ').map((n) => n[0]).join('').toUpperCase();
   };
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-gray-950">
@@ -63,6 +63,6 @@ export function Header({ title }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </header>
-  );
+    </header>);
+
 }

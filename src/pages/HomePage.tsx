@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from "../lib/auth";
 export function HomePage() {
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
-  const isLoading = useAuthStore(state => state.isLoading);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const navigate = useNavigate();
   useEffect(() => {
     if (!isLoading) {
@@ -18,8 +18,8 @@ export function HomePage() {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-foreground">Initializing Zenitho...</div>
-      </div>
-    );
+      </div>);
+
   }
   return <Outlet />;
 }

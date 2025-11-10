@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthLayout } from '@/components/auth/AuthLayout';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from "../../lib/auth";
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const login = useAuthStore(state => state.login);
+  const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +41,8 @@ export function LoginPage() {
                 placeholder="user@zenitho.app"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+                required />
+
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <p className="text-xs text-muted-foreground">
@@ -62,6 +62,6 @@ export function LoginPage() {
           </CardFooter>
         </form>
       </Card>
-    </AuthLayout>
-  );
+    </AuthLayout>);
+
 }
