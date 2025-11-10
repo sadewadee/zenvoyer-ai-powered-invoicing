@@ -1,20 +1,81 @@
 export interface ApiResponse<T = unknown> { success: boolean; data?: T; error?: string; }
-
-export interface WeatherResult {
-  location: string;
-  temperature: number;
-  condition: string;
-  humidity: number;
+// Zenvoyer Business Types
+export type InvoiceStatus = 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Partial';
+export interface ActivityLogEntry {
+  date: string; // Using ISO string for serialization
+  action: string;
 }
-
-export interface MCPResult {
-  content: string;
+export interface LineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  cost?: number;
+  total: number;
 }
-
-export interface ErrorResult {
-  error: string;
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  clientId: string;
+  issueDate: string; // Using ISO string
+  dueDate: string; // Using ISO string
+  lineItems: LineItem[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  amountPaid: number;
+  status: InvoiceStatus;
+  activityLog: ActivityLogEntry[];
 }
-
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  address: string;
+  phone: string;
+}
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  unitPrice: number;
+  cost?: number;
+  category?: string;
+}
+export interface SubUserPermissions {
+  canViewInvoices: boolean;
+  canCreateInvoice: boolean;
+  canEditInvoice: boolean;
+  canDeleteInvoice: boolean;
+  canManageClients: boolean;
+}
+export interface SubUser {
+  id: string;
+  name: string;
+  email: string;
+  status: 'Active' | 'Pending';
+  permissions: SubUserPermissions;
+}
+export interface PaymentGateway {
+  name: 'Xendit' | 'Midtrans' | 'PayPal' | 'Stripe';
+  isEnabled: boolean;
+  apiKey: string;
+  apiSecret: string;
+}
+// BusinessAgent State
+export interface BusinessState {
+  invoices: Invoice[];
+  clients: Client[];
+  products: Product[];
+  settings: {
+    paymentGateways: Record<string, PaymentGateway>;
+    theme: {
+      primaryColor: string;
+    };
+  };
+}
+// Original Chat Agent Types
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -22,14 +83,12 @@ export interface Message {
   id: string;
   toolCalls?: ToolCall[];
 }
-
 export interface ToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
   result?: unknown;
 }
-
 export interface ChatState {
   messages: Message[];
   sessionId: string;
@@ -37,20 +96,9 @@ export interface ChatState {
   model: string;
   streamingMessage?: string;
 }
-
 export interface SessionInfo {
   id: string;
   title: string;
   createdAt: number;
   lastActive: number;
-}
-
-export interface Tool {
-  name: string;
-  description: string;
-  parameters: {
-    type: string;
-    properties: Record<string, unknown>;
-    required: string[];
-  };
 }

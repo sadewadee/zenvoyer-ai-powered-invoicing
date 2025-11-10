@@ -29,6 +29,7 @@ const invoiceSchema = z.object({
   lineItems: z.array(lineItemSchema).min(1, 'At least one line item is required'),
   discount: z.coerce.number().min(0).max(100).default(0),
   tax: z.coerce.number().min(0).max(100).default(0),
+  amountPaid: z.coerce.number().min(0).default(0),
   status: z.enum(['Paid', 'Unpaid', 'Overdue', 'Draft', 'Partial']),
 });
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
@@ -50,6 +51,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           lineItems: invoice.lineItems.map(item => ({ ...item })),
           discount: invoice.discount,
           tax: invoice.tax,
+          amountPaid: invoice.amountPaid || 0,
           status: invoice.status,
         }
       : {
@@ -59,6 +61,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           lineItems: [{ id: uuidv4(), description: '', quantity: 1, unitPrice: 0 }],
           discount: 0,
           tax: 10,
+          amountPaid: 0,
           status: 'Draft',
         },
   });
@@ -69,11 +72,13 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const watchLineItems = form.watch('lineItems');
   const watchDiscount = form.watch('discount');
   const watchTax = form.watch('tax');
+  const watchAmountPaid = form.watch('amountPaid');
   const subtotal = watchLineItems.reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
   const discountAmount = subtotal * ((watchDiscount || 0) / 100);
   const taxAmount = (subtotal - discountAmount) * ((watchTax || 0) / 100);
   const total = subtotal - discountAmount + taxAmount;
-  function onSubmit(data: InvoiceFormValues) {
+  const balanceDue = total - (watchAmountPaid || 0);
+  async function onSubmit(data: InvoiceFormValues) {
     const selectedClient = clients.find(c => c.id === data.clientId);
     if (!selectedClient) return;
     const invoiceData = {
@@ -83,14 +88,16 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       lineItems: data.lineItems.map(item => ({ ...item, total: item.quantity * item.unitPrice })),
       discount: data.discount,
       tax: data.tax,
+      amountPaid: data.amountPaid,
       status: data.status,
-      subtotal: 0, // Will be recalculated in the store
-      total: 0, // Will be recalculated in the store
+      subtotal: 0,
+      total: 0,
     };
     if (invoice) {
-      updateInvoice({ ...invoice, ...invoiceData });
+      await updateInvoice({ ...invoice, ...invoiceData });
     } else {
-      addInvoice(invoiceData);
+      // @ts-ignore
+      await addInvoice(invoiceData);
     }
     onClose();
   }
@@ -227,7 +234,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>Discount</span><span>-${discountAmount.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>Tax</span><span>+${taxAmount.toFixed(2)}</span></div>
-              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>${total.toFixed(2)}</span></div>
+              <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span>${total.toFixed(2)}</span></div>
+              <FormField control={form.control} name="amountPaid" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount Paid</FormLabel>
+                  <FormControl><Input type="number" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <div className="flex justify-between font-bold text-lg text-primary-700 dark:text-primary-400"><span>Balance Due</span><span>${balanceDue.toFixed(2)}</span></div>
             </div>
           </div>
         </div>

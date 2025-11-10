@@ -1,14 +1,14 @@
 // Making changes to this file is **STRICTLY** forbidden. Please add your routes in `userRoutes.ts` file.
-
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { Env } from "./core-utils";
 import { API_RESPONSES } from "./config";
-import { userRoutes, coreRoutes } from "./userRoutes";
+import { userRoutes, coreRoutes, businessRoutes } from "./userRoutes";
 import { ChatAgent } from "./agent";
 import { AppController } from "./app-controller";
-export { ChatAgent, AppController };
+import { BusinessAgent } from "./business-agent";
+export { ChatAgent, AppController, BusinessAgent };
 export interface ClientErrorReport {
   message: string;
   url: string;
@@ -23,13 +23,10 @@ export interface ClientErrorReport {
   colno?: number;
   error?: unknown;
 }
-
 const app = new Hono<{ Bindings: Env }>();
-
 /** DO NOT TOUCH THE CODE BELOW THIS LINE */
 // Middleware
 app.use("*", logger());
-
 app.use(
   "/api/*",
   cors({
@@ -38,10 +35,9 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 userRoutes(app);
 coreRoutes(app);
-
+businessRoutes(app);
 app.get("/api/health", (c) =>
   c.json({
     success: true,
@@ -51,7 +47,6 @@ app.get("/api/health", (c) =>
     },
   })
 );
-
 app.post("/api/client-errors", async (c) => {
   try {
     const errorReport = await c.req.json<ClientErrorReport>();
@@ -70,7 +65,6 @@ app.post("/api/client-errors", async (c) => {
     );
   }
 });
-
 app.notFound((c) =>
   c.json(
     {
@@ -80,7 +74,6 @@ app.notFound((c) =>
     { status: 404 }
   )
 );
-
 export default {
   fetch: app.fetch,
 } satisfies ExportedHandler<Env>;

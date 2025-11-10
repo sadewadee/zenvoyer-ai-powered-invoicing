@@ -1,38 +1,48 @@
 import { create } from 'zustand';
-import { v4 as uuidv4 } from 'uuid';
 import type { Product } from '@/types';
+import { getProducts, addProduct as apiAddProduct, updateProduct as apiUpdateProduct, deleteProduct as apiDeleteProduct } from '@/lib/api-client';
 interface ProductState {
   products: Product[];
-  getProducts: () => Product[];
+  isLoading: boolean;
+  error: string | null;
+  fetchProducts: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: string) => void;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (product: Product) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
 }
-const initialProducts: Product[] = [
-  { id: 'prod-1', name: 'Web Development', description: 'Full-stack web development services.', unitPrice: 2500, category: 'Services' },
-  { id: 'prod-2', name: 'UI/UX Design', description: 'User interface and experience design.', unitPrice: 1500, category: 'Services' },
-  { id: 'prod-3', name: 'SaaS Subscription', description: 'Monthly subscription for our software.', unitPrice: 49.99, category: 'Software' },
-  { id: 'prod-4', name: 'Consulting Hour', description: 'One hour of technical consulting.', unitPrice: 150, category: 'Services' },
-];
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: initialProducts,
-  getProducts: () => get().products,
+  products: [],
+  isLoading: true,
+  error: null,
+  fetchProducts: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const products = await getProducts();
+      set({ products, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+    }
+  },
   getProductById: (id) => get().products.find(p => p.id === id),
-  addProduct: (product) => {
-    const newProduct = { ...product, id: uuidv4() };
+  addProduct: async (product) => {
+    const newProduct = await apiAddProduct(product);
     set(state => ({ products: [...state.products, newProduct] }));
   },
-  updateProduct: (updatedProduct) => {
+  updateProduct: async (updatedProduct) => {
+    const returnedProduct = await apiUpdateProduct(updatedProduct);
     set(state => ({
       products: state.products.map(product =>
-        product.id === updatedProduct.id ? updatedProduct : product
+        product.id === returnedProduct.id ? returnedProduct : product
       ),
     }));
   },
-  deleteProduct: (id) => {
+  deleteProduct: async (id) => {
+    await apiDeleteProduct(id);
     set(state => ({
       products: state.products.filter(product => product.id !== id),
     }));
   },
 }));
+// Initial fetch
+useProductStore.getState().fetchProducts();

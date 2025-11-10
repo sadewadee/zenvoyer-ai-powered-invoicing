@@ -13,6 +13,10 @@
 			{
 				"name": "APP_CONTROLLER",
 				"class_name": "AppController"
+			},
+			{
+				"name": "BUSINESS_AGENT",
+				"class_name": "BusinessAgent"
 			}
 		]
 	},
@@ -24,6 +28,10 @@
 		{
 			"tag": "v2",
 			"new_classes": ["AppController"]
+		},
+		{
+			"tag": "v3",
+			"new_classes": ["BusinessAgent"]
 		}
 	],
 	"assets": {
