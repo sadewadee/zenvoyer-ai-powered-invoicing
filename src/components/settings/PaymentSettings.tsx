@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,47 +7,33 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useSettingsStore } from '@/stores/use-settings-store';
+import { usePaymentGatewayStore } from '@/stores/use-payment-gateway-store';
 import { Toaster, toast } from 'sonner';
 const gatewaySchema = z.object({
-  name: z.enum(['Xendit', 'Midtrans', 'PayPal', 'Stripe']),
   isEnabled: z.boolean(),
   apiKey: z.string(),
   apiSecret: z.string(),
 });
 const formSchema = z.object({
-  Xendit: gatewaySchema.omit({ name: true }),
-  Midtrans: gatewaySchema.omit({ name: true }),
-  PayPal: gatewaySchema.omit({ name: true }),
-  Stripe: gatewaySchema.omit({ name: true }),
+  Xendit: gatewaySchema,
+  Midtrans: gatewaySchema,
+  PayPal: gatewaySchema,
+  Stripe: gatewaySchema,
 });
 type PaymentSettingsFormValues = z.infer<typeof formSchema>;
 export function PaymentSettings() {
-  const settings = useSettingsStore((state) => state.settings);
-  const updateSettings = useSettingsStore((state) => state.updateSettings);
+  const gateways = usePaymentGatewayStore((state) => state.gateways);
+  const updateGateway = usePaymentGatewayStore((state) => state.updateGateway);
   const form = useForm<PaymentSettingsFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: settings?.paymentGateways,
+    defaultValues: gateways,
   });
-  useEffect(() => {
-    if (settings) {
-      form.reset(settings.paymentGateways);
-    }
-  }, [settings, form]);
-  const onSubmit = async (values: PaymentSettingsFormValues) => {
-    const fullValues = {
-      Xendit: { ...values.Xendit, name: 'Xendit' as const },
-      Midtrans: { ...values.Midtrans, name: 'Midtrans' as const },
-      PayPal: { ...values.PayPal, name: 'PayPal' as const },
-      Stripe: { ...values.Stripe, name: 'Stripe' as const },
-    };
-    await updateSettings({ paymentGateways: fullValues });
+  const onSubmit = (values: PaymentSettingsFormValues) => {
+    Object.entries(values).forEach(([name, settings]) => {
+      updateGateway(name, settings);
+    });
     toast.success('Payment settings saved successfully!');
   };
-  if (!settings) {
-    return <div>Loading settings...</div>;
-  }
-  const gatewayNames = Object.keys(settings.paymentGateways) as Array<keyof PaymentSettingsFormValues>;
   return (
     <>
       <Toaster position="top-right" />
@@ -61,19 +46,19 @@ export function PaymentSettings() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent>
               <Accordion type="multiple" className="w-full" defaultValue={['Xendit']}>
-                {gatewayNames.map((gatewayName) => (
-                  <AccordionItem value={gatewayName} key={gatewayName}>
-                    <AccordionTrigger className="text-lg font-medium">{gatewayName}</AccordionTrigger>
+                {Object.values(gateways).map((gateway) => (
+                  <AccordionItem value={gateway.name} key={gateway.name}>
+                    <AccordionTrigger className="text-lg font-medium">{gateway.name}</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <FormField
                         control={form.control}
-                        name={`${gatewayName}.isEnabled`}
+                        name={`${gateway.name}.isEnabled`}
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable {gatewayName}</FormLabel>
+                              <FormLabel className="text-base">Enable {gateway.name}</FormLabel>
                               <FormDescription>
-                                Allow clients to pay invoices using {gatewayName}.
+                                Allow clients to pay invoices using {gateway.name}.
                               </FormDescription>
                             </div>
                             <FormControl>
@@ -84,7 +69,7 @@ export function PaymentSettings() {
                       />
                       <FormField
                         control={form.control}
-                        name={`${gatewayName}.apiKey`}
+                        name={`${gateway.name}.apiKey`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>API Key</FormLabel>
@@ -97,7 +82,7 @@ export function PaymentSettings() {
                       />
                       <FormField
                         control={form.control}
-                        name={`${gatewayName}.apiSecret`}
+                        name={`${gateway.name}.apiSecret`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>API Secret / Webhook Key</FormLabel>

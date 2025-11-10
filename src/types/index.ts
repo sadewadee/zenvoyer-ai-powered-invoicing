@@ -64,3 +64,13 @@ export interface ManagedUser {
   createdAt: Date;
   plan: 'Free' | 'Pro';
 }
+export interface PaymentGateway {
+  name: 'Xendit' | 'Midtrans' | 'PayPal' | 'Stripe';
+  isEnabled: boolean;
+  apiKey: string;
+  apiSecret: string;
+}
+export interface PaymentGatewayState {
+  gateways: Record<string, PaymentGateway>;
+  updateGateway: (name: string, settings: Partial<PaymentGateway>) => void;
+}

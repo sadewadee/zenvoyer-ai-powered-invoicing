@@ -3,6 +3,7 @@ import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { BusinessSettings } from "@/components/settings/BusinessSettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
+import { PaymentSettings } from "@/components/settings/PaymentSettings";
 export function SettingsPage() {
   return (
     <div className="space-y-8">
@@ -13,6 +14,7 @@ export function SettingsPage() {
           <TabsTrigger value="business">Business</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
         <TabsContent value="profile">
           <ProfileSettings />
@@ -25,6 +27,9 @@ export function SettingsPage() {
         </TabsContent>
         <TabsContent value="subscription">
           <SubscriptionSettings />
+        </TabsContent>
+        <TabsContent value="payments">
+          <PaymentSettings />
         </TabsContent>
       </Tabs>
     </div>
