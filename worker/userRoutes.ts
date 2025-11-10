@@ -10,27 +10,7 @@ const getUserId = (c: any) => {
     // In a real app, you'd parse a JWT: `const payload = c.get('jwtPayload'); return payload.sub;`
     return 'user-123-static';
 };
-export function businessRoutes(app: Hono<{ Bindings: Env }>) {
-    app.all('/api/data/*', async (c) => {
-        try {
-            const userId = getUserId(c);
-            if (!userId) {
-                return c.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-            }
-            const agent = await getAgentByName<Env, BusinessAgent>(c.env.BUSINESS_AGENT, userId);
-            const url = new URL(c.req.url);
-            url.pathname = url.pathname.replace('/api/data', ''); // /api/data/invoices -> /invoices
-            return agent.fetch(new Request(url.toString(), {
-                method: c.req.method,
-                headers: c.req.header(),
-                body: c.req.raw.body,
-            }));
-        } catch (error) {
-            console.error('Business agent routing error:', error);
-            return c.json({ success: false, error: API_RESPONSES.AGENT_ROUTING_FAILED }, { status: 500 });
-        }
-    });
-}
+
 /**
  * DO NOT MODIFY THIS FUNCTION. Only for your reference.
  */
@@ -57,6 +37,26 @@ export function coreRoutes(app: Hono<{ Bindings: Env }>) {
     });
 }
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
+    app.all('/api/data/*', async (c) => {
+        try {
+            const userId = getUserId(c);
+            if (!userId) {
+                return c.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+            }
+            const agent = await getAgentByName<Env, BusinessAgent>(c.env.BUSINESS_AGENT, userId);
+            const url = new URL(c.req.url);
+            url.pathname = url.pathname.replace('/api/data', ''); // /api/data/invoices -> /invoices
+            return agent.fetch(new Request(url.toString(), {
+                method: c.req.method,
+                headers: c.req.header(),
+                body: c.req.method === 'GET' || c.req.method === 'DELETE' ? undefined : c.req.raw.body,
+            }));
+        } catch (error) {
+            console.error('Business agent routing error:', error);
+            return c.json({ success: false, error: API_RESPONSES.AGENT_ROUTING_FAILED }, { status: 500 });
+        }
+    });
+
     // Add your routes here
     /**
      * List all chat sessions
