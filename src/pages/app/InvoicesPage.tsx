@@ -10,17 +10,17 @@ import { PlusCircle, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { useInvoiceStore } from "@/stores/use-invoice-store";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import type { Invoice, InvoiceStatus } from "@/types";
-import { format } from "date-fns";
+import { format } from "date-fns";function cn<T = unknown>(...args: unknown[]): T | null {console.warn('cn is not implemented', args);return null as T | null;}
 const statusColors: Record<InvoiceStatus, string> = {
   Paid: "border-transparent bg-status-paid-bg text-status-paid",
   Unpaid: "border-transparent bg-status-unpaid-bg text-status-unpaid",
   Overdue: "border-transparent bg-status-overdue-bg text-status-overdue",
   Draft: "border-transparent bg-status-draft-bg text-status-draft",
-  Partial: "border-transparent bg-status-partial-bg text-status-partial",
+  Partial: "border-transparent bg-status-partial-bg text-status-partial"
 };
 export function InvoicesPage() {
-  const invoices = useInvoiceStore(state => state.invoices);
-  const deleteInvoice = useInvoiceStore(state => state.deleteInvoice);
+  const invoices = useInvoiceStore((state) => state.invoices);
+  const deleteInvoice = useInvoiceStore((state) => state.deleteInvoice);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | undefined>(undefined);
@@ -47,9 +47,9 @@ export function InvoicesPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Invoices</h1>
-        <Dialog open={isFormOpen} onOpenChange={(open) => { if (!open) handleFormClose(); else setIsFormOpen(true); }}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => {if (!open) handleFormClose();else setIsFormOpen(true);}}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setSelectedInvoice(undefined); setIsFormOpen(true); }}>
+            <Button onClick={() => {setSelectedInvoice(undefined);setIsFormOpen(true);}}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Invoice
             </Button>
@@ -81,8 +81,8 @@ export function InvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
+              {invoices.map((invoice) =>
+              <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                   <TableCell>{invoice.client.name}</TableCell>
                   <TableCell className="text-right">${invoice.total.toFixed(2)}</TableCell>
@@ -106,7 +106,7 @@ export function InvoicesPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -126,6 +126,6 @@ export function InvoicesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>);
+
 }
