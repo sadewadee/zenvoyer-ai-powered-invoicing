@@ -4,16 +4,7 @@ import { ChatAgent } from './agent';
 import { BusinessAgent } from './business-agent';
 import { API_RESPONSES } from './config';
 import { Env, getAppController, registerSession, unregisterSession } from "./core-utils";
-// A mock function to get user ID. In a real app, this would come from a JWT.
-const getUserId = (c: any) => {
-    // For now, we'll use a static ID to ensure all data goes to the same DO instance.
-    // In a real app, you'd parse a JWT: `const payload = c.get('jwtPayload'); return payload.sub;`
-    return 'user-123-static';
-};
-/**
- * DO NOT MODIFY THIS FUNCTION. Only for your reference.
- * Handles all chat-related API calls.
- */
+const getUserId = (c: any) => 'user-123-static';
 export function coreRoutes(app: Hono<{ Bindings: Env }>) {
     app.all('/api/chat/:sessionId/*', async (c) => {
         try {
@@ -32,9 +23,6 @@ export function coreRoutes(app: Hono<{ Bindings: Env }>) {
         }
     });
 }
-/**
- * Handles all business data-related API calls (invoices, clients, etc.).
- */
 export function businessRoutes(app: Hono<{ Bindings: Env }>) {
     app.all('/api/data/*', async (c) => {
         try {
@@ -44,7 +32,7 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
             }
             const agent = await getAgentByName<Env, BusinessAgent>(c.env.BUSINESS_AGENT, userId);
             const url = new URL(c.req.url);
-            url.pathname = url.pathname.replace('/api/data', ''); // /api/data/invoices -> /invoices
+            url.pathname = url.pathname.replace('/api/data', '');
             return agent.fetch(new Request(url.toString(), {
                 method: c.req.method,
                 headers: c.req.header(),
@@ -56,19 +44,24 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
         }
     });
 }
-/**
- * Handles session management and other user-specific, non-business-data routes.
- */
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
+    // --- User Auth & Management Routes ---
+    app.post('/api/auth/login', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.post('/api/auth/signup', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.get('/api/users', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    // --- Session Management Routes ---
     app.get('/api/sessions', async (c) => {
-        try {
-            const controller = getAppController(c.env);
-            const sessions = await controller.listSessions();
-            return c.json({ success: true, data: sessions });
-        } catch (error) {
-            console.error('Failed to list sessions:', error);
-            return c.json({ success: false, error: 'Failed to retrieve sessions' }, { status: 500 });
-        }
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
     });
     app.post('/api/sessions', async (c) => {
         try {

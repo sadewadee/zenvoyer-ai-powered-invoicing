@@ -17,12 +17,17 @@ export function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const success = await signup(name, email);
-    if (success) {
-      toast.success("Account created successfully!");
-      navigate('/app/setup');
-    } else {
-      toast.error("An account with this email already exists.");
+    try {
+      const success = await signup(name, email);
+      if (success) {
+        toast.success("Account created successfully!");
+        navigate('/app/setup');
+      } else {
+        toast.error("An account with this email already exists.");
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Failed to create account.");
+    } finally {
       setIsLoading(false);
     }
   };

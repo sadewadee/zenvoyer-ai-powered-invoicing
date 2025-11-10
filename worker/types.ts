@@ -97,6 +97,17 @@ export interface BusinessState {
   teamMembers: SubUser[];
   settings: Settings;
 }
+// User Management Types
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER' | 'SUB_USER';
+export interface ManagedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: 'Active' | 'Banned';
+  createdAt: string; // ISO string
+  plan: 'Free' | 'Pro';
+}
 // Original Chat Agent Types
 export interface Message {
   role: 'user' | 'assistant' | 'system';

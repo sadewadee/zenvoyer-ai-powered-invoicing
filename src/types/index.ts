@@ -88,3 +88,16 @@ export interface PaymentGatewayState {
   gateways: Record<string, PaymentGateway>;
   updateGateway: (name: string, settings: Partial<PaymentGateway>) => void;
 }
+export interface BusinessDetails {
+  companyName: string;
+  address: string;
+  taxId?: string;
+}
+export interface ThemeSettings {
+  primaryColor: string;
+}
+export interface Settings {
+  business: BusinessDetails;
+  paymentGateways: Record<string, PaymentGateway>;
+  theme: ThemeSettings;
+}

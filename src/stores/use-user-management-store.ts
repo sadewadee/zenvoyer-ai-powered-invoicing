@@ -1,48 +1,48 @@
 import { create } from 'zustand';
-import { v4 as uuidv4 } from 'uuid';
 import type { UserRole } from '@/lib/auth';
 import type { ManagedUser } from '@/types';
+import { getManagedUsers } from '@/lib/api-client';
 interface UserManagementState {
   users: ManagedUser[];
-  addUser: (user: Omit<ManagedUser, 'id' | 'status' | 'createdAt' | 'plan' | 'role'>) => ManagedUser;
+  isLoading: boolean;
+  error: string | null;
+  fetchUsers: () => Promise<void>;
   updateUserRole: (userId: string, newRole: UserRole) => void;
   toggleUserStatus: (userId: string) => void;
 }
-const initialUsers: ManagedUser[] = [
-  { id: 'user-123', name: 'Alex Johnson', email: 'user@zenitho.app', role: 'USER', status: 'Active', createdAt: new Date('2023-01-15'), plan: 'Pro' },
-  { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenitho.app', role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20'), plan: 'Pro' },
-  { id: 'super-789', name: 'Sam Chen', email: 'super@zenitho.app', role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01'), plan: 'Pro' },
-  { id: 'user-002', name: 'Casey Lee', email: 'casey@example.com', role: 'USER', status: 'Active', createdAt: new Date('2023-03-10'), plan: 'Free' },
-  { id: 'user-003', name: 'Jordan Miller', email: 'jordan@example.com', role: 'USER', status: 'Banned', createdAt: new Date('2023-04-05'), plan: 'Free' },
-];
-export const useUserManagementStore = create<UserManagementState>((set, get) => ({
-  users: initialUsers,
-  addUser: (userData) => {
-    const newUser: ManagedUser = {
-      ...userData,
-      id: uuidv4(),
-      role: 'USER',
-      status: 'Active',
-      createdAt: new Date(),
-      plan: 'Free',
-    };
-    set((state) => ({
-      users: [...state.users, newUser],
-    }));
-    return newUser;
+export const useUserManagementStore = create<UserManagementState>((set) => ({
+  users: [],
+  isLoading: true,
+  error: null,
+  fetchUsers: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const users = await getManagedUsers();
+      const typedUsers = users.map(u => ({ ...u, createdAt: new Date(u.createdAt) }));
+      set({ users: typedUsers, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+    }
   },
   updateUserRole: (userId, newRole) => {
+    // This is now a mock UI update. Real logic is on the backend.
+    // A full implementation would involve an API call and refetching users.
     set((state) => ({
       users: state.users.map((user) =>
         user.id === userId ? { ...user, role: newRole } : user
       ),
     }));
+    console.warn("Mock role update. Implement API call.");
   },
   toggleUserStatus: (userId) => {
+    // This is now a mock UI update.
     set((state) => ({
       users: state.users.map((user) =>
         user.id === userId ? { ...user, status: user.status === 'Active' ? 'Banned' : 'Active' } : user
       ),
     }));
+    console.warn("Mock status toggle. Implement API call.");
   },
 }));
+// Initial fetch for admin panel
+useUserManagementStore.getState().fetchUsers();

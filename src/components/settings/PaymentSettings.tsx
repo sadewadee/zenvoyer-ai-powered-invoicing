@@ -54,19 +54,19 @@ export function PaymentSettings() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent>
               <Accordion type="multiple" className="w-full" defaultValue={['Xendit']}>
-                {Object.values(settings.paymentGateways).map((gateway) => (
-                  <AccordionItem value={gateway.name} key={gateway.name}>
-                    <AccordionTrigger className="text-lg font-medium">{gateway.name}</AccordionTrigger>
+                {(Object.keys(settings.paymentGateways) as Array<keyof typeof settings.paymentGateways>).map((gatewayName) => (
+                  <AccordionItem value={gatewayName} key={gatewayName}>
+                    <AccordionTrigger className="text-lg font-medium">{gatewayName}</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <FormField
                         control={form.control}
-                        name={`${gateway.name}.isEnabled`}
+                        name={`${gatewayName}.isEnabled`}
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable {gateway.name}</FormLabel>
+                              <FormLabel className="text-base">Enable {gatewayName}</FormLabel>
                               <FormDescription>
-                                Allow clients to pay invoices using {gateway.name}.
+                                Allow clients to pay invoices using {gatewayName}.
                               </FormDescription>
                             </div>
                             <FormControl>
@@ -77,7 +77,7 @@ export function PaymentSettings() {
                       />
                       <FormField
                         control={form.control}
-                        name={`${gateway.name}.apiKey`}
+                        name={`${gatewayName}.apiKey`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>API Key</FormLabel>
@@ -90,7 +90,7 @@ export function PaymentSettings() {
                       />
                       <FormField
                         control={form.control}
-                        name={`${gateway.name}.apiSecret`}
+                        name={`${gatewayName}.apiSecret`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>API Secret / Webhook Key</FormLabel>

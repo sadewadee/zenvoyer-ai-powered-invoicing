@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { authService, User } from '@/lib/auth';
-import { useUserManagementStore } from './use-user-management-store';
+import * as api from '@/lib/api-client';
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -16,30 +16,36 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   login: async (email: string) => {
     set({ isLoading: true });
-    const user = await authService.login(email);
-    if (user) {
-      set({ user, isAuthenticated: true, isLoading: false });
-      return true;
+    try {
+      const user = await authService.login(email);
+      if (user) {
+        set({ user, isAuthenticated: true, isLoading: false });
+        return true;
+      }
+      set({ isLoading: false });
+      return false;
+    } catch (error) {
+      console.error("Login failed:", error);
+      set({ isLoading: false });
+      return false;
     }
-    set({ isLoading: false });
-    return false;
   },
   signup: async (name: string, email: string) => {
     set({ isLoading: true });
-    const { addUser } = useUserManagementStore.getState();
-    const existingUser = authService.getUserByEmail(email);
-    if (existingUser) {
+    try {
+      const newUser = await api.signup(name, email);
+      const user = await authService.login(newUser.email);
+      if (user) {
+        set({ user, isAuthenticated: true, isLoading: false });
+        return true;
+      }
       set({ isLoading: false });
-      return false; // User already exists
+      return false;
+    } catch (error) {
+      console.error("Signup failed:", error);
+      set({ isLoading: false });
+      return false;
     }
-    const newUser = addUser({ name, email });
-    const user = await authService.login(newUser.email);
-    if (user) {
-      set({ user, isAuthenticated: true, isLoading: false });
-      return true;
-    }
-    set({ isLoading: false });
-    return false;
   },
   logout: async () => {
     await authService.logout();

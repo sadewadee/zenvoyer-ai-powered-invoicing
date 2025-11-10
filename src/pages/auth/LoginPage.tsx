@@ -16,11 +16,16 @@ export function LoginPage() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    const success = await login(email);
-    if (success) {
-      navigate('/app/dashboard');
-    } else {
-      setError('Invalid email. Please use a mock email.');
+    try {
+      const success = await login(email);
+      if (success) {
+        navigate('/app/dashboard');
+      } else {
+        setError('Invalid email or user is banned.');
+      }
+    } catch (err) {
+      setError((err as Error).message || 'An unexpected error occurred.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -42,11 +47,10 @@ export function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required />
-
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <p className="text-xs text-muted-foreground">
-              Use: user@zenitho.app, admin@zenitho.app, or super@zenitho.app
+              Initial users: user@zenitho.app, admin@zenitho.app, super@zenitho.app
             </p>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
@@ -63,5 +67,4 @@ export function LoginPage() {
         </form>
       </Card>
     </AuthLayout>);
-
 }

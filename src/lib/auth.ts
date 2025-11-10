@@ -1,4 +1,4 @@
-import { useUserManagementStore } from "@/stores/use-user-management-store";
+import * as api from './api-client';
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER' | 'SUB_USER';
 export interface User {
   id: string;
@@ -7,25 +7,24 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
 }
-const SESSION_KEY = 'zenitho_user_session';
+const SESSION_KEY = 'zenvoyer_user_session';
 export const authService = {
   login: async (email: string): Promise<User | null> => {
-    // Simulate API delay
-    await new Promise(res => setTimeout(res, 500));
-    const allUsers = useUserManagementStore.getState().users;
-    const managedUser = allUsers.find(u => u.email === email);
-    if (managedUser && managedUser.status === 'Active') {
-      const user: User = {
-        id: managedUser.id,
-        name: managedUser.name,
-        email: managedUser.email,
-        role: managedUser.role,
-        avatarUrl: `https://i.pravatar.cc/150?u=${managedUser.email}`
-      };
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
-      return user;
+    try {
+      const userFromApi = await api.login(email);
+      if (userFromApi) {
+        const user: User = {
+          ...userFromApi,
+          avatarUrl: `https://i.pravatar.cc/150?u=${userFromApi.email}`
+        };
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+        return user;
+      }
+      return null;
+    } catch (error) {
+      console.error("AuthService login failed:", error);
+      return null;
     }
-    return null;
   },
   logout: async (): Promise<void> => {
     sessionStorage.removeItem(SESSION_KEY);
@@ -42,17 +41,4 @@ export const authService = {
       return null;
     }
   },
-  getUserByEmail: (email: string): User | null => {
-    const allUsers = useUserManagementStore.getState().users;
-    const managedUser = allUsers.find(u => u.email === email);
-    if (managedUser) {
-      return {
-        id: managedUser.id,
-        name: managedUser.name,
-        email: managedUser.email,
-        role: managedUser.role,
-      };
-    }
-    return null;
-  }
 };
