@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Toaster, toast } from 'sonner';
+import { useSettingsStore } from '@/stores/use-settings-store';
 const themes = [
   { name: 'Zenvoyer Blue', color: '221.2 83.2% 53.3%' },
   { name: 'Emerald', color: '142.1 76.2% 36.3%' },
@@ -12,26 +13,26 @@ const themes = [
   { name: 'Amber', color: '38 92.1% 50.2%' },
 ];
 export function ThemeSettings() {
-  const [mounted, setMounted] = useState(false);
-  const [primaryColor, setPrimaryColor] = useState('221.2 83.2% 53.3%');
+  const settings = useSettingsStore((state) => state.settings);
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
+  const [selectedColor, setSelectedColor] = useState(settings?.theme.primaryColor || themes[0].color);
   useEffect(() => {
-    const storedColor = localStorage.getItem('zenvoyer-theme');
-    if (storedColor) {
-      setPrimaryColor(storedColor);
-      document.documentElement.style.setProperty('--primary-hsl', storedColor);
+    if (settings) {
+      const color = settings.theme.primaryColor;
+      setSelectedColor(color);
+      document.documentElement.style.setProperty('--primary-hsl', color);
     }
-    setMounted(true);
-  }, []);
+  }, [settings]);
   const handleThemeChange = (color: string) => {
-    setPrimaryColor(color);
+    setSelectedColor(color);
     document.documentElement.style.setProperty('--primary-hsl', color);
-    localStorage.setItem('zenvoyer-theme', color);
   };
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
+    await updateSettings({ theme: { primaryColor: selectedColor } });
     toast.success('Theme saved successfully!');
   };
-  if (!mounted) {
-    return null;
+  if (!settings) {
+    return <div>Loading theme settings...</div>;
   }
   return (
     <>
@@ -54,11 +55,11 @@ export function ThemeSettings() {
                   onClick={() => handleThemeChange(theme.color)}
                   className={cn(
                     'h-20 w-full rounded-lg border-2 flex items-center justify-center transition-all',
-                    primaryColor === theme.color ? 'border-primary' : 'border-transparent hover:border-muted-foreground/50'
+                    selectedColor === theme.color ? 'border-primary' : 'border-transparent hover:border-muted-foreground/50'
                   )}
                   style={{ backgroundColor: `hsl(${theme.color})` }}
                 >
-                  {primaryColor === theme.color && <Check className="h-8 w-8 text-white" />}
+                  {selectedColor === theme.color && <Check className="h-8 w-8 text-white" />}
                   <span className="sr-only">{theme.name}</span>
                 </button>
               ))}

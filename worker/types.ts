@@ -76,18 +76,26 @@ export interface PaymentGateway {
   apiKey: string;
   apiSecret: string;
 }
+export interface BusinessDetails {
+  companyName: string;
+  address: string;
+  taxId?: string;
+}
+export interface ThemeSettings {
+  primaryColor: string;
+}
+export interface Settings {
+  business: BusinessDetails;
+  paymentGateways: Record<string, PaymentGateway>;
+  theme: ThemeSettings;
+}
 // BusinessAgent State
 export interface BusinessState {
   invoices: Invoice[];
   clients: Client[];
   products: Product[];
   teamMembers: SubUser[];
-  settings: {
-    paymentGateways: Record<string, PaymentGateway>;
-    theme: {
-      primaryColor: string;
-    };
-  };
+  settings: Settings;
 }
 // Original Chat Agent Types
 export interface Message {

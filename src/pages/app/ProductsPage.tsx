@@ -30,14 +30,14 @@ export function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", unitPrice: 0, category: "" },
+    defaultValues: { name: "", description: "", unitPrice: 0.01, category: "" },
   });
   const handleOpenForm = (product?: Product) => {
     setSelectedProduct(product);
     if (product) {
       form.reset(product);
     } else {
-      form.reset({ name: "", description: "", unitPrice: 0, category: "" });
+      form.reset({ name: "", description: "", unitPrice: 0.01, category: "" });
     }
     setIsFormOpen(true);
   };

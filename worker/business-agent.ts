@@ -1,7 +1,7 @@
 import { Agent } from 'agents';
 import { v4 as uuidv4 } from 'uuid';
 import type { Env } from './core-utils';
-import type { BusinessState, Invoice, Client, Product, SubUser } from './types';
+import type { BusinessState, Invoice, Client, Product, SubUser, Settings } from './types';
 const calculateTotals = (lineItems: any[], discount: number, tax: number) => {
   const subtotal = lineItems.reduce((acc, item) => acc + item.total, 0);
   const discountAmount = subtotal * (discount / 100);
@@ -16,7 +16,17 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     products: [],
     teamMembers: [],
     settings: {
-      paymentGateways: {},
+      business: {
+        companyName: 'Your Company',
+        address: '123 Main St, Anytown, USA',
+        taxId: '',
+      },
+      paymentGateways: {
+        Xendit: { name: 'Xendit', isEnabled: false, apiKey: '', apiSecret: '' },
+        Midtrans: { name: 'Midtrans', isEnabled: false, apiKey: '', apiSecret: '' },
+        PayPal: { name: 'PayPal', isEnabled: false, apiKey: '', apiSecret: '' },
+        Stripe: { name: 'Stripe', isEnabled: false, apiKey: '', apiSecret: '' },
+      },
       theme: { primaryColor: '221.2 83.2% 53.3%' },
     },
   };
@@ -124,6 +134,15 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     this.setState({ ...this.state, teamMembers: this.state.teamMembers.filter(m => m.id !== id) });
     return Response.json({ success: true });
   }
+  // --- Settings ---
+  getSettings(): Response {
+    return Response.json({ success: true, data: this.state.settings });
+  }
+  updateSettings(newSettings: Partial<Settings>): Response {
+    const updatedSettings = { ...this.state.settings, ...newSettings };
+    this.setState({ ...this.state, settings: updatedSettings });
+    return Response.json({ success: true, data: updatedSettings });
+  }
   // --- Main Request Handler ---
   async onRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -153,6 +172,10 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
         if (method === 'POST') return this.addTeamMember(await request.json());
         if (method === 'PUT') return this.updateTeamMember(await request.json());
         if (method === 'DELETE') return this.deleteTeamMember(path.split('/')[2]);
+      }
+      if (path.startsWith('/settings')) {
+        if (method === 'GET') return this.getSettings();
+        if (method === 'PUT') return this.updateSettings(await request.json());
       }
     } catch (e) {
       return Response.json({ success: false, error: (e as Error).message }, { status: 500 });

@@ -1,4 +1,4 @@
-import type { Invoice, Client, Product, SubUser } from '@/types';
+import type { Invoice, Client, Product, SubUser, Settings } from '@/types';
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
@@ -68,3 +68,6 @@ export const getTeamMembers = () => api.get<SubUser[]>('/team');
 export const addTeamMember = (member: Omit<SubUser, 'id' | 'status'>) => api.post<SubUser>('/team', member);
 export const updateTeamMember = (member: SubUser) => api.put<SubUser>('/team', member);
 export const deleteTeamMember = (id: string) => api.delete(`/team/${id}`);
+// Settings API
+export const getSettings = () => api.get<Settings>('/settings');
+export const updateSettings = (settings: Partial<Settings>) => api.put<Settings>('/settings', settings);
