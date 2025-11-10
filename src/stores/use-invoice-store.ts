@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Invoice, InvoiceStatus } from '@/types';
+import type { Invoice, InvoiceStatus, ActivityLogEntry } from '@/types';
 import { getInvoices, addInvoice as apiAddInvoice, updateInvoice as apiUpdateInvoice, deleteInvoice as apiDeleteInvoice } from '@/lib/api-client';
 interface InvoiceState {
   invoices: Invoice[];
@@ -31,18 +31,45 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     set(state => ({ invoices: [...state.invoices, {...newInvoice, issueDate: new Date(newInvoice.issueDate), dueDate: new Date(newInvoice.dueDate)}] }));
   },
   updateInvoice: async (updatedInvoice) => {
+    const originalInvoice = get().getInvoiceById(updatedInvoice.id);
+    if (!originalInvoice) return;
+    const newActivityLog: ActivityLogEntry[] = [];
+    // Check for status change
+    if (originalInvoice.status !== updatedInvoice.status) {
+      newActivityLog.push({
+        date: new Date(),
+        action: `Status changed from ${originalInvoice.status} to ${updatedInvoice.status}`,
+      });
+    }
+    // Check for payment
+    const paymentMade = updatedInvoice.amountPaid - originalInvoice.amountPaid;
+    if (paymentMade > 0) {
+      newActivityLog.push({
+        date: new Date(),
+        action: `Payment of $${paymentMade.toFixed(2)} received.`,
+      });
+    }
+    // Auto-update status based on payment, but don't override a manual status change in the same update
     let newStatus: InvoiceStatus = updatedInvoice.status;
-    if (updatedInvoice.amountPaid <= 0) {
+    if (updatedInvoice.amountPaid <= 0 && updatedInvoice.status !== 'Draft' && updatedInvoice.status !== 'Overdue') {
       newStatus = 'Unpaid';
+    } else if (updatedInvoice.amountPaid > 0 && updatedInvoice.amountPaid < updatedInvoice.total) {
+      newStatus = 'Partial';
     } else if (updatedInvoice.amountPaid >= updatedInvoice.total) {
       newStatus = 'Paid';
-    } else {
-      newStatus = 'Partial';
     }
-    // Don't override 'Overdue' status if it's already set and not paid
-    if (updatedInvoice.status !== 'Overdue' || newStatus === 'Paid') {
-      updatedInvoice.status = newStatus;
+    if (updatedInvoice.status !== newStatus && originalInvoice.status === updatedInvoice.status) {
+       if (originalInvoice.status !== 'Overdue' || newStatus === 'Paid') {
+         updatedInvoice.status = newStatus;
+         if (originalInvoice.status !== newStatus) {
+            newActivityLog.push({
+              date: new Date(),
+              action: `Status automatically updated to ${newStatus}.`,
+            });
+         }
+       }
     }
+    updatedInvoice.activityLog = [...newActivityLog, ...updatedInvoice.activityLog];
     const returnedInvoice = await apiUpdateInvoice(updatedInvoice);
     set(state => ({
       invoices: state.invoices.map(invoice =>

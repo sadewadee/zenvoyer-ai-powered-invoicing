@@ -26,7 +26,7 @@
     --input: 220 13% 91%;
     --ring: var(--primary-hsl);
     --radius: 0.5rem;
-    /* Zenvoyer Invoice Status Colors */
+    /* Zenvoyer Invoice Status Colors - Light */
     --status-draft: 220 8.9% 46.1%;
     --status-draft-bg: 220 14.3% 95.9%;
     --status-unpaid: 38 92.1% 50.2%;
@@ -61,6 +61,19 @@
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: var(--primary-hsl);
+    /* Zenvoyer Invoice Status Colors - Dark */
+    --status-draft: 217.9 10.6% 64.9%;
+    --status-draft-bg: 215 27.9% 16.9%;
+    --status-unpaid: 45 93.3% 91.2%;
+    --status-unpaid-bg: 38 92.1% 50.2%/0.2;
+    --status-partial: 220 100% 97.1%;
+    --status-partial-bg: 221.2 83.2% 53.3%/0.2;
+    --status-paid: 142.1 70.6% 95.1%;
+    --status-paid-bg: 142.1 76.2% 36.3%/0.2;
+    --status-overdue: 0 85.7% 97.3%;
+    --status-overdue-bg: 0 72.2% 50.6%/0.2;
+    --status-archived: 217.9 10.6% 64.9%;
+    --status-archived-bg: 215 27.9% 16.9%;
   }
   * {
     @apply border-border;

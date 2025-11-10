@@ -1,7 +1,7 @@
 import { Agent } from 'agents';
 import { v4 as uuidv4 } from 'uuid';
 import type { Env } from './core-utils';
-import type { BusinessState, Invoice, Client, Product, SubUser, Settings } from './types';
+import type { BusinessState, Invoice, Client, Product, SubUser, Settings, ActivityLogEntry } from './types';
 const calculateTotals = (lineItems: any[], discount: number, tax: number) => {
   const subtotal = lineItems.reduce((acc, item) => acc + item.total, 0);
   const discountAmount = subtotal * (discount / 100);
@@ -27,7 +27,7 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
         PayPal: { name: 'PayPal', isEnabled: false, apiKey: '', apiSecret: '' },
         Stripe: { name: 'Stripe', isEnabled: false, apiKey: '', apiSecret: '' },
       },
-      theme: { primaryColor: '221.2 83.2% 53.3%' },
+      theme: { primaryColor: '221.2 83.2% 53.3%', colorScheme: 'system' },
     },
   };
   private getNextInvoiceNumber(): string {
@@ -57,12 +57,27 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     return Response.json({ success: true, data: newInvoice });
   }
   updateInvoice(updatedInvoice: Invoice): Response {
+    const originalInvoice = this.state.invoices.find(inv => inv.id === updatedInvoice.id);
+    if (!originalInvoice) {
+      return Response.json({ success: false, error: 'Invoice not found' }, { status: 404 });
+    }
+    const newActivityLog: ActivityLogEntry[] = [];
+    const now = new Date().toISOString();
+    // Check for status change
+    if (originalInvoice.status !== updatedInvoice.status) {
+      newActivityLog.push({ date: now, action: `Status changed from ${originalInvoice.status} to ${updatedInvoice.status}` });
+    }
+    // Check for payment
+    const paymentMade = updatedInvoice.amountPaid - originalInvoice.amountPaid;
+    if (paymentMade > 0) {
+      newActivityLog.push({ date: now, action: `Payment of $${paymentMade.toFixed(2)} received.` });
+    }
     const { subtotal, total } = calculateTotals(updatedInvoice.lineItems, updatedInvoice.discount, updatedInvoice.tax);
     const finalInvoice = {
       ...updatedInvoice,
       subtotal,
       total,
-      activityLog: [{ date: new Date().toISOString(), action: 'Invoice Updated' }, ...updatedInvoice.activityLog],
+      activityLog: [...newActivityLog, ...updatedInvoice.activityLog],
     };
     this.setState({
       ...this.state,
@@ -139,7 +154,11 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     return Response.json({ success: true, data: this.state.settings });
   }
   updateSettings(newSettings: Partial<Settings>): Response {
-    const updatedSettings = { ...this.state.settings, ...newSettings };
+    const updatedSettings = { 
+      ...this.state.settings, 
+      ...newSettings,
+      theme: { ...this.state.settings.theme, ...newSettings.theme },
+    };
     this.setState({ ...this.state, settings: updatedSettings });
     return Response.json({ success: true, data: updatedSettings });
   }

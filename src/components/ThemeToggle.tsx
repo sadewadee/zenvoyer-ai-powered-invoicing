@@ -1,21 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
-
-interface ThemeToggleProps {
-  className?: string;
-}
-
-export function ThemeToggle({ className = "absolute top-4 right-4" }: ThemeToggleProps) {
-  const { isDark, toggleTheme } = useTheme();
-
+import { Sun, Moon } from 'lucide-react';
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const toggleTheme = () => {
+    const newTheme = isDark ? 'light' : 'dark';
+    setTheme(newTheme);
+  };
   return (
-    <Button 
-      onClick={toggleTheme} 
+    <Button
+      onClick={toggleTheme}
       variant="ghost"
       size="icon"
-      className={`${className} text-2xl hover:scale-110 hover:rotate-12 transition-all duration-200 active:scale-90 z-50`}
+      className="text-muted-foreground hover:text-foreground"
     >
-      {isDark ? '☀️' : '🌙'}
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      <span className="sr-only">Toggle theme</span>
     </Button>
   );
 }
