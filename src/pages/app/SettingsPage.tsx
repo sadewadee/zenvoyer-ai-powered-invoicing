@@ -6,6 +6,7 @@ import { TeamSettings } from "@/components/settings/TeamSettings";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 import { PaymentSettings } from "@/components/settings/PaymentSettings";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
+import { SupportSettings } from "@/components/settings/SupportSettings";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -43,6 +44,7 @@ export function SettingsPage() {
               )
             ))}
           </TooltipProvider>
+          <TabsTrigger value="support">Help & Support</TabsTrigger>
         </TabsList>
         <TabsContent value="profile"><ProfileSettings /></TabsContent>
         <TabsContent value="business"><BusinessSettings /></TabsContent>
@@ -54,6 +56,7 @@ export function SettingsPage() {
             </TabsContent>
           )
         ))}
+        <TabsContent value="support"><SupportSettings /></TabsContent>
       </Tabs>
     </div>
   );

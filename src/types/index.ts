@@ -101,3 +101,18 @@ export interface Settings {
   paymentGateways: Record<string, PaymentGateway>;
   theme: ThemeSettings;
 }
+export interface PlatformSettings {
+  subscriptionGateways: Record<string, PaymentGateway>;
+}
+export type SupportTicketStatus = 'Open' | 'In Progress' | 'Resolved';
+export type SupportTicketPriority = 'Low' | 'Medium' | 'High';
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userEmail: string;
+  subject: string;
+  message: string;
+  status: SupportTicketStatus;
+  priority: SupportTicketPriority;
+  createdAt: string; // ISO string
+}

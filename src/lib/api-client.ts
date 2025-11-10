@@ -1,4 +1,4 @@
-import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole, PlatformSettings } from '@/types';
+import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole, PlatformSettings, SupportTicket, SupportTicketStatus } from '@/types';
 import type { User } from './auth';
 const handleResponse = async (response: Response) => {
   const result = await response.json();
@@ -47,6 +47,10 @@ export const updateUserProfile = (userId: string, profileData: { name: string; e
 // Platform Settings API
 export const getPlatformSettings = () => api.get<PlatformSettings>('/api/platform/settings');
 export const updatePlatformSettings = (settings: Partial<PlatformSettings>) => api.put<PlatformSettings>('/api/platform/settings', settings);
+// Support Tickets API
+export const createSupportTicket = (ticketData: { userId: string; userEmail: string; subject: string; message: string }) => api.post<SupportTicket>('/api/support/tickets', ticketData);
+export const getSupportTickets = () => api.get<SupportTicket[]>('/api/support/tickets');
+export const updateSupportTicketStatus = (ticketId: string, status: SupportTicketStatus) => api.put<SupportTicket>(`/api/support/tickets/${ticketId}/status`, { status });
 // Business Data API
 const prepareInvoicePayload = (invoice: any) => ({
   ...invoice,

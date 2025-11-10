@@ -2,17 +2,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Ticket, Clock, CheckCircle } from "lucide-react";
-const mockTickets = [
-  { id: 'TKT-001', subject: 'Invoice calculation issue', user: 'user@zenitho.app', status: 'Open', priority: 'High', createdAt: '2 hours ago' },
-  { id: 'TKT-002', subject: 'Cannot add new client', user: 'another@example.com', status: 'In Progress', priority: 'Medium', createdAt: '5 hours ago' },
-  { id: 'TKT-003', subject: 'PDF download failed', user: 'test@example.com', status: 'Resolved', priority: 'Low', createdAt: '1 day ago' },
-];
-const kpiCards = [
-  { title: "Open Tickets", icon: Ticket, value: "15", change: "2 new today" },
-  { title: "Avg. Resolution Time", icon: Clock, value: "2.5 hours", change: "Improving" },
-  { title: "Resolved Today", icon: CheckCircle, value: "8", change: "Good work!" },
-];
+import { useSupportTicketStore } from "@/stores/use-support-ticket-store";
+import { formatDistanceToNow } from "date-fns";
 export function AdminDashboard() {
+  const { tickets, isLoading } = useSupportTicketStore();
+  const openTickets = tickets.filter(t => t.status === 'Open').length;
+  const inProgressTickets = tickets.filter(t => t.status === 'In Progress').length;
+  const resolvedTickets = tickets.filter(t => t.status === 'Resolved').length;
+  const recentTickets = tickets.filter(t => t.status !== 'Resolved').slice(0, 5);
+  const kpiCards = [
+    { title: "Open Tickets", icon: Ticket, value: openTickets.toString() },
+    { title: "In Progress", icon: Clock, value: inProgressTickets.toString() },
+    { title: "Total Resolved", icon: CheckCircle, value: resolvedTickets.toString() },
+  ];
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-3">
@@ -24,7 +26,6 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
-              <p className="text-xs text-muted-foreground">{card.change}</p>
             </CardContent>
           </Card>
         ))}
@@ -46,18 +47,20 @@ export function AdminDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockTickets.map((ticket) => (
+              {isLoading ? (
+                <TableRow><TableCell colSpan={6} className="text-center">Loading tickets...</TableCell></TableRow>
+              ) : recentTickets.map((ticket) => (
                 <TableRow key={ticket.id}>
                   <TableCell className="font-medium">{ticket.id}</TableCell>
                   <TableCell>{ticket.subject}</TableCell>
-                  <TableCell>{ticket.user}</TableCell>
+                  <TableCell>{ticket.userEmail}</TableCell>
                   <TableCell>
-                    <Badge variant={ticket.status === 'Open' ? 'destructive' : ticket.status === 'In Progress' ? 'outline' : 'default'}>
+                    <Badge variant={ticket.status === 'Open' ? 'destructive' : 'outline'}>
                       {ticket.status}
                     </Badge>
                   </TableCell>
                   <TableCell>{ticket.priority}</TableCell>
-                  <TableCell>{ticket.createdAt}</TableCell>
+                  <TableCell>{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

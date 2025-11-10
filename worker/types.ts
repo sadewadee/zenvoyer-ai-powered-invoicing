@@ -112,6 +112,19 @@ export interface ManagedUser {
   createdAt: string; // ISO string
   plan: 'Free' | 'Pro';
 }
+// Support Ticket Types
+export type SupportTicketStatus = 'Open' | 'In Progress' | 'Resolved';
+export type SupportTicketPriority = 'Low' | 'Medium' | 'High';
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userEmail: string;
+  subject: string;
+  message: string;
+  status: SupportTicketStatus;
+  priority: SupportTicketPriority;
+  createdAt: string; // ISO string
+}
 // Original Chat Agent Types
 export interface Message {
   role: 'user' | 'assistant' | 'system';

@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { v4 as uuidv4 } from 'uuid';
-import type { SessionInfo, ManagedUser, UserRole, PlatformSettings } from './types';
+import type { SessionInfo, ManagedUser, UserRole, PlatformSettings, SupportTicket, SupportTicketStatus } from './types';
 import type { Env } from './core-utils';
 // In a real app, use a proper hashing library like bcrypt or Argon2.
 // This is a mock for demonstration purposes.
@@ -9,6 +9,7 @@ const mockVerify = (password: string, hash: string) => mockHash(password) === ha
 export class AppController extends DurableObject<Env> {
   private sessions = new Map<string, SessionInfo>();
   private users = new Map<string, ManagedUser>();
+  private supportTickets = new Map<string, SupportTicket>();
   private platformSettings: PlatformSettings | undefined;
   private loaded = false;
   constructor(ctx: DurableObjectState, env: Env) {
@@ -16,9 +17,10 @@ export class AppController extends DurableObject<Env> {
   }
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) {
-      const stored = await this.ctx.storage.get<Map<string, any>>(['sessions', 'users', 'platformSettings']);
+      const stored = await this.ctx.storage.get<Map<string, any>>(['sessions', 'users', 'platformSettings', 'supportTickets']);
       this.sessions = new Map(Object.entries(stored.get('sessions') || {}));
       this.users = new Map(Object.entries(stored.get('users') || {}));
+      this.supportTickets = new Map(Object.entries(stored.get('supportTickets') || {}));
       this.platformSettings = stored.get('platformSettings') as PlatformSettings | undefined;
       // Seed initial users if none exist
       if (this.users.size === 0) {
@@ -41,6 +43,7 @@ export class AppController extends DurableObject<Env> {
       sessions: Object.fromEntries(this.sessions),
       users: Object.fromEntries(this.users),
       platformSettings: this.platformSettings,
+      supportTickets: Object.fromEntries(this.supportTickets),
     });
   }
   private seedInitialUsers() {
@@ -136,6 +139,35 @@ export class AppController extends DurableObject<Env> {
     await this.persist();
     return this.platformSettings!;
   }
+  // --- Support Tickets ---
+  async createSupportTicket(ticketData: { userId: string; userEmail: string; subject: string; message: string }): Promise<SupportTicket> {
+    await this.ensureLoaded();
+    const newTicket: SupportTicket = {
+      ...ticketData,
+      id: `TKT-${String(this.supportTickets.size + 1).padStart(5, '0')}`,
+      status: 'Open',
+      priority: 'Medium',
+      createdAt: new Date().toISOString(),
+    };
+    this.supportTickets.set(newTicket.id, newTicket);
+    await this.persist();
+    return newTicket;
+  }
+  async listSupportTickets(): Promise<SupportTicket[]> {
+    await this.ensureLoaded();
+    return Array.from(this.supportTickets.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  async updateSupportTicketStatus(ticketId: string, status: SupportTicketStatus): Promise<SupportTicket | null> {
+    await this.ensureLoaded();
+    const ticket = this.supportTickets.get(ticketId);
+    if (ticket) {
+      ticket.status = status;
+      this.supportTickets.set(ticketId, ticket);
+      await this.persist();
+      return ticket;
+    }
+    return null;
+  }
   // --- Session Management ---
   async addSession(sessionId: string, title?: string): Promise<void> {
     await this.ensureLoaded();
@@ -173,6 +205,26 @@ export class AppController extends DurableObject<Env> {
           const body = await request.json<Partial<PlatformSettings>>();
           const settings = await this.updatePlatformSettings(body);
           return Response.json({ success: true, data: settings });
+        }
+      }
+      if (path.startsWith('/support/tickets')) {
+        if (method === 'GET') {
+          const tickets = await this.listSupportTickets();
+          return Response.json({ success: true, data: tickets });
+        }
+        if (method === 'POST') {
+          const body = await request.json<{ userId: string; userEmail: string; subject: string; message: string }>();
+          const ticket = await this.createSupportTicket(body);
+          return Response.json({ success: true, data: ticket });
+        }
+        const ticketId = path.split('/')[3];
+        if (ticketId && path.endsWith('/status')) {
+          if (method === 'PUT') {
+            const { status } = await request.json<{ status: SupportTicketStatus }>();
+            const updatedTicket = await this.updateSupportTicketStatus(ticketId, status);
+            if (updatedTicket) return Response.json({ success: true, data: updatedTicket });
+            return Response.json({ success: false, error: 'Ticket not found' }, { status: 404 });
+          }
         }
       }
       if (path.startsWith('/sessions')) {

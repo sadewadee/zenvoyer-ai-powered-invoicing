@@ -54,6 +54,19 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);
     });
+    // --- Support Tickets ---
+    app.get('/api/support/tickets', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.post('/api/support/tickets', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.put('/api/support/tickets/:id/status', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
     // --- User Auth & Management Routes ---
     app.post('/api/auth/login', async (c) => {
         const controller = getAppController(c.env);
