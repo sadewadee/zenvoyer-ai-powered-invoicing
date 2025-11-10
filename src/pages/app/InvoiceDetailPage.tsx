@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import { Button } from '@/components/ui/button';
 import { InvoicePreview } from '@/components/InvoicePreview';
+import { InvoiceActivityLog } from '@/components/InvoiceActivityLog';
 import { ArrowLeft, Download, Printer, Send, Clipboard } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -111,7 +112,14 @@ export function InvoiceDetailPage() {
             </Button>
           </div>
         </div>
-        <InvoicePreview invoice={invoice} />
+        <div className="grid lg:grid-cols-3 gap-8 items-start">
+          <div className="lg:col-span-2">
+            <InvoicePreview invoice={invoice} />
+          </div>
+          <div className="lg:col-span-1">
+            <InvoiceActivityLog activityLog={invoice.activityLog} />
+          </div>
+        </div>
       </div>
     </>
   );

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/stores/use-auth-store';
 import { Toaster, toast } from 'sonner';
 export function SignupPage() {
   const [name, setName] = useState('');

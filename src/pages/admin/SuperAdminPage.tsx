@@ -13,7 +13,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MoreHorizontal, Edit, UserX, UserCheck } from 'lucide-react';
-import { useUserManagementStore, ManagedUser } from '@/stores/use-user-management-store';
+import { useUserManagementStore } from '@/stores/use-user-management-store';
+import type { ManagedUser } from '@/types';
 import type { UserRole } from '@/lib/auth';
 import { Toaster, toast } from 'sonner';
 const roleSchema = z.object({

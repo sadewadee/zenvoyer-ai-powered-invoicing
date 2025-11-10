@@ -1,10 +1,15 @@
 import { UserRole } from "@/lib/auth";
 export type InvoiceStatus = 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Partial';
+export interface ActivityLogEntry {
+  date: Date;
+  action: string;
+}
 export interface LineItem {
   id: string;
   description: string;
   quantity: number;
   unitPrice: number;
+  cost?: number;
   total: number;
 }
 export interface Invoice {
@@ -19,6 +24,7 @@ export interface Invoice {
   tax: number; // as a percentage
   total: number;
   status: InvoiceStatus;
+  activityLog: ActivityLogEntry[];
 }
 export interface Client {
   id: string;
@@ -32,6 +38,7 @@ export interface Product {
   name: string;
   description: string;
   unitPrice: number;
+  cost?: number;
   category?: string;
 }
 export interface SubUserPermissions {

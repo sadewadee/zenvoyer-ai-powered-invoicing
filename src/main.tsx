@@ -18,6 +18,7 @@ import { InvoicesPage } from '@/pages/app/InvoicesPage';
 import { InvoiceDetailPage } from '@/pages/app/InvoiceDetailPage';
 import { ClientsPage } from '@/pages/app/ClientsPage';
 import { ProductsPage } from '@/pages/app/ProductsPage';
+import { ReportsPage } from '@/pages/app/ReportsPage';
 import { SettingsPage } from '@/pages/app/SettingsPage';
 import { SuperAdminPage } from '@/pages/admin/SuperAdminPage';
 import { SupportPage } from '@/pages/admin/SupportPage';
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
       {
         path: "/app/products",
         element: <ProductsPage />,
+      },
+      {
+        path: "/app/reports",
+        element: <ReportsPage />,
       },
       {
         path: "/app/settings",

@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, Users, Package, Settings, Shield, LifeBuoy, LogOut, ChevronsLeft, ChevronsRight
+  LayoutDashboard, FileText, Users, Package, Settings, Shield, LifeBuoy, LogOut, ChevronsLeft, ChevronsRight, BarChart2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/stores/use-auth-store';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 const userNav = [
@@ -11,6 +11,7 @@ const userNav = [
   { name: 'Invoices', href: '/app/invoices', icon: FileText },
   { name: 'Clients', href: '/app/clients', icon: Users },
   { name: 'Products', href: '/app/products', icon: Package },
+  { name: 'Reports', href: '/app/reports', icon: BarChart2 },
 ];
 const adminNav = [
   { name: 'Support Dashboard', href: '/admin/support', icon: LifeBuoy },

@@ -6,7 +6,7 @@ interface InvoiceState {
   invoices: Invoice[];
   getInvoices: () => Invoice[];
   getInvoiceById: (id: string) => Invoice | undefined;
-  addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => void;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber' | 'activityLog'>) => void;
   updateInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
   getNextInvoiceNumber: () => string;
@@ -26,12 +26,17 @@ const initialInvoices: Invoice[] = [
     client: initialClients[0],
     issueDate: new Date('2023-10-25'),
     dueDate: new Date('2023-11-25'),
-    lineItems: [{ id: 'li-1', description: 'Web Development', quantity: 1, unitPrice: 2500, total: 2500 }],
+    lineItems: [{ id: 'li-1', description: 'Web Development', quantity: 1, unitPrice: 2500, cost: 1200, total: 2500 }],
     subtotal: 2500,
     discount: 0,
     tax: 10,
     total: 2750,
     status: 'Paid',
+    activityLog: [
+      { date: new Date('2023-10-25'), action: 'Invoice Created' },
+      { date: new Date('2023-10-26'), action: 'Invoice Sent' },
+      { date: new Date('2023-11-15'), action: 'Payment Received' },
+    ]
   },
   {
     id: 'inv-2',
@@ -39,12 +44,15 @@ const initialInvoices: Invoice[] = [
     client: initialClients[1],
     issueDate: new Date('2023-10-28'),
     dueDate: new Date('2023-11-28'),
-    lineItems: [{ id: 'li-2', description: 'Arc Reactor Maintenance', quantity: 1, unitPrice: 1500, total: 1500 }],
+    lineItems: [{ id: 'li-2', description: 'Arc Reactor Maintenance', quantity: 1, unitPrice: 1500, cost: 500, total: 1500 }],
     subtotal: 1500,
     discount: 0,
     tax: 0,
     total: 1500,
     status: 'Unpaid',
+    activityLog: [
+      { date: new Date('2023-10-28'), action: 'Invoice Created' },
+    ]
   },
 ];
 export const useInvoiceStore = create<InvoiceState>((set, get) => ({
@@ -59,12 +67,21 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
       invoiceNumber: get().getNextInvoiceNumber(),
       subtotal,
       total,
+      activityLog: [{ date: new Date(), action: 'Invoice Created' }],
     };
     set(state => ({ invoices: [...state.invoices, newInvoice] }));
   },
   updateInvoice: (updatedInvoice) => {
     const { subtotal, total } = calculateTotals(updatedInvoice.lineItems, updatedInvoice.discount, updatedInvoice.tax);
-    const finalInvoice = { ...updatedInvoice, subtotal, total };
+    const finalInvoice = {
+      ...updatedInvoice,
+      subtotal,
+      total,
+      activityLog: [
+        { date: new Date(), action: 'Invoice Updated' },
+        ...updatedInvoice.activityLog,
+      ],
+    };
     set(state => ({
       invoices: state.invoices.map(invoice =>
         invoice.id === finalInvoice.id ? finalInvoice : invoice
