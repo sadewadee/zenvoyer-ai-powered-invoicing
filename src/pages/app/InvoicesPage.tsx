@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Eye, Download } from "lucide-react";
 import { useInvoiceStore } from "@/stores/use-invoice-store";
@@ -12,7 +13,8 @@ import { InvoiceForm } from "@/components/InvoiceForm";
 import type { Invoice, InvoiceStatus } from "@/types";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import jsPDF from 'jspdf';interface DialogTrigger {id?: string | number;[key: string]: unknown;}interface DialogTriggerProps {children?: React.ReactNode;className?: string;style?: React.CSSProperties;[key: string]: unknown;}
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 const statusColors: Record<InvoiceStatus, string> = {
   Paid: "border-transparent bg-status-paid-bg text-status-paid",
   Unpaid: "border-transparent bg-status-unpaid-bg text-status-unpaid",
@@ -21,6 +23,7 @@ const statusColors: Record<InvoiceStatus, string> = {
   Partial: "border-transparent bg-status-partial-bg text-status-partial"
 };
 export function InvoicesPage() {
+  const navigate = useNavigate();
   const invoices = useInvoiceStore((state) => state.invoices);
   const deleteInvoice = useInvoiceStore((state) => state.deleteInvoice);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -47,7 +50,6 @@ export function InvoicesPage() {
   };
   const handleDownloadPdf = (invoice: Invoice) => {
     const doc = new jsPDF();
-
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("INVOICE", 14, 22);
@@ -56,44 +58,39 @@ export function InvoicesPage() {
     doc.text(`Invoice #: ${invoice.invoiceNumber}`, 14, 30);
     doc.text(`Issue Date: ${format(invoice.issueDate, 'MMM d, yyyy')}`, 14, 35);
     doc.text(`Due Date: ${format(invoice.dueDate, 'MMM d, yyyy')}`, 14, 40);
-
     doc.text("Zenitho Inc.", 200, 22, { align: 'right' });
     doc.text("123 Cloud Ave, Internet City", 200, 27, { align: 'right' });
-
     doc.setFont("helvetica", "bold");
     doc.text("Bill To:", 14, 60);
     doc.setFont("helvetica", "normal");
     doc.text(invoice.client.name, 14, 65);
     doc.text(invoice.client.address, 14, 70);
     doc.text(invoice.client.email, 14, 75);
-
     const tableColumn = ["Description", "Quantity", "Unit Price", "Total"];
     const tableRows: (string | number)[][] = [];
     invoice.lineItems.forEach((item) => {
       const itemData = [
-      item.description,
-      item.quantity,
-      `$${item.unitPrice.toFixed(2)}`,
-      `$${item.total.toFixed(2)}`];
-
+        item.description,
+        item.quantity,
+        `${item.unitPrice.toFixed(2)}`,
+        `${item.total.toFixed(2)}`
+      ];
       tableRows.push(itemData);
     });
-    doc.autoTable({
+    (doc as any).autoTable({
       head: [tableColumn],
       body: tableRows,
       startY: 85,
       theme: 'striped',
       headStyles: { fillColor: [26, 63, 122] }
     });
-
     const finalY = (doc as any).lastAutoTable.finalY;
     doc.setFontSize(12);
-    doc.text(`Subtotal: $${invoice.subtotal.toFixed(2)}`, 200, finalY + 10, { align: 'right' });
-    doc.text(`Discount (${invoice.discount}%): -$${(invoice.subtotal * invoice.discount / 100).toFixed(2)}`, 200, finalY + 17, { align: 'right' });
-    doc.text(`Tax (${invoice.tax}%): +$${((invoice.subtotal - invoice.subtotal * invoice.discount / 100) * invoice.tax / 100).toFixed(2)}`, 200, finalY + 24, { align: 'right' });
+    doc.text(`Subtotal: ${invoice.subtotal.toFixed(2)}`, 200, finalY + 10, { align: 'right' });
+    doc.text(`Discount (${invoice.discount}%): -${(invoice.subtotal * invoice.discount / 100).toFixed(2)}`, 200, finalY + 17, { align: 'right' });
+    doc.text(`Tax (${invoice.tax}%): +${((invoice.subtotal - (invoice.subtotal * invoice.discount / 100)) * invoice.tax / 100).toFixed(2)}`, 200, finalY + 24, { align: 'right' });
     doc.setFont("helvetica", "bold");
-    doc.text(`Total: $${invoice.total.toFixed(2)}`, 200, finalY + 31, { align: 'right' });
-
+    doc.text(`Total: ${invoice.total.toFixed(2)}`, 200, finalY + 31, { align: 'right' });
     doc.setFontSize(10);
     doc.text("Thank you for your business!", 14, 280);
     doc.save(`Invoice-${invoice.invoiceNumber}.pdf`);
@@ -102,9 +99,9 @@ export function InvoicesPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Invoices</h1>
-        <Dialog open={isFormOpen} onOpenChange={(open) => {if (!open) handleFormClose();else setIsFormOpen(true);}}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => { if (!open) handleFormClose(); else setIsFormOpen(true); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => {setSelectedInvoice(undefined);setIsFormOpen(true);}}>
+            <Button onClick={() => { setSelectedInvoice(undefined); setIsFormOpen(true); }}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Invoice
             </Button>
@@ -137,7 +134,7 @@ export function InvoicesPage() {
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) =>
-              <TableRow key={invoice.id}>
+                <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                   <TableCell>{invoice.client.name}</TableCell>
                   <TableCell className="text-right">${invoice.total.toFixed(2)}</TableCell>
@@ -154,7 +151,7 @@ export function InvoicesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/app/invoices/${invoice.id}`)}><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEdit(invoice)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDownloadPdf(invoice)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDelete(invoice)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>

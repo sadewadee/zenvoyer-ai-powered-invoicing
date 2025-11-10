@@ -1,4 +1,4 @@
-import { useForm, useFieldArray, Control } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,8 +24,8 @@ const lineItemSchema = z.object({
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
-  issueDate: z.date(),
-  dueDate: z.date(),
+  issueDate: z.date({ required_error: "Issue date is required." }),
+  dueDate: z.date({ required_error: "Due date is required." }),
   lineItems: z.array(lineItemSchema).min(1, 'At least one line item is required'),
   discount: z.coerce.number().min(0).max(100).default(0),
   tax: z.coerce.number().min(0).max(100).default(0),

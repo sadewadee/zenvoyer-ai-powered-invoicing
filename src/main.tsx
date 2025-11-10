@@ -15,6 +15,7 @@ import { SignupPage } from '@/pages/auth/SignupPage';
 import { ProtectedRoutes } from '@/components/ProtectedRoutes';
 import { DashboardPage } from '@/pages/app/DashboardPage';
 import { InvoicesPage } from '@/pages/app/InvoicesPage';
+import { InvoiceDetailPage } from '@/pages/app/InvoiceDetailPage';
 import { ClientsPage } from '@/pages/app/ClientsPage';
 import { ProductsPage } from '@/pages/app/ProductsPage';
 import { SettingsPage } from '@/pages/app/SettingsPage';
@@ -44,6 +45,10 @@ const router = createBrowserRouter([
       {
         path: "/app/invoices",
         element: <InvoicesPage />,
+      },
+      {
+        path: "/app/invoices/:id",
+        element: <InvoiceDetailPage />,
       },
       {
         path: "/app/clients",

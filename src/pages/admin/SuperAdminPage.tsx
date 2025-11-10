@@ -17,7 +17,7 @@ import { useUserManagementStore, ManagedUser } from '@/stores/use-user-managemen
 import type { UserRole } from '@/lib/auth';
 import { Toaster, toast } from 'sonner';
 const roleSchema = z.object({
-  role: z.enum(['USER', 'ADMIN', 'SUPER_ADMIN']),
+  role: z.enum(['USER', 'SUB_USER', 'ADMIN', 'SUPER_ADMIN']),
 });
 type RoleFormValues = z.infer<typeof roleSchema>;
 export function SuperAdminPage() {
@@ -135,7 +135,7 @@ export function SuperAdminPage() {
                         <SelectTrigger><SelectValue /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(['USER', 'ADMIN', 'SUPER_ADMIN'] as UserRole[]).map(role => (
+                        {(['USER', 'SUB_USER', 'ADMIN', 'SUPER_ADMIN'] as UserRole[]).map(role => (
                           <SelectItem key={role} value={role}>{role}</SelectItem>
                         ))}
                       </SelectContent>
