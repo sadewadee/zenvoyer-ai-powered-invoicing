@@ -1,4 +1,4 @@
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,7 +16,6 @@ import { format } from 'date-fns';
 import { useClientStore } from '@/stores/use-client-store';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
-import { useEffect } from 'react';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
@@ -25,8 +24,12 @@ const lineItemSchema = z.object({
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
-  issueDate: z.date({ required_error: 'Issue date is required' }),
-  dueDate: z.date({ required_error: 'Due date is required' }),
+  issueDate: z.date({
+    required_error: 'Issue date is required',
+  }),
+  dueDate: z.date({
+    required_error: 'Due date is required',
+  }),
   lineItems: z.array(lineItemSchema).min(1, 'At least one line item is required'),
   discount: z.coerce.number().min(0).max(100).default(0),
   tax: z.coerce.number().min(0).max(100).default(0),
@@ -39,7 +42,8 @@ interface InvoiceFormProps {
 }
 export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const clients = useClientStore(state => state.clients);
-  const { addInvoice, updateInvoice } = useInvoiceStore();
+  const addInvoice = useInvoiceStore(state => state.addInvoice);
+  const updateInvoice = useInvoiceStore(state => state.updateInvoice);
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: invoice
@@ -70,8 +74,8 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const watchDiscount = form.watch('discount');
   const watchTax = form.watch('tax');
   const subtotal = watchLineItems.reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
-  const discountAmount = subtotal * (watchDiscount / 100);
-  const taxAmount = (subtotal - discountAmount) * (watchTax / 100);
+  const discountAmount = subtotal * ((watchDiscount || 0) / 100);
+  const taxAmount = (subtotal - discountAmount) * ((watchTax || 0) / 100);
   const total = subtotal - discountAmount + taxAmount;
   function onSubmit(data: InvoiceFormValues) {
     const selectedClient = clients.find(c => c.id === data.clientId);

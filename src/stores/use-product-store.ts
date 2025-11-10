@@ -1,51 +1,38 @@
 import { create } from 'zustand';
-import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 import type { Product } from '@/types';
-import { getProducts, addProduct as apiAddProduct, updateProduct as apiUpdateProduct, deleteProduct as apiDeleteProduct } from '@/lib/api-client';
 interface ProductState {
   products: Product[];
-  isLoading: boolean;
-  error: string | null;
-  fetchProducts: () => Promise<void>;
+  getProducts: () => Product[];
   getProductById: (id: string) => Product | undefined;
-  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
-  updateProduct: (product: Product) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id'>) => void;
+  updateProduct: (product: Product) => void;
+  deleteProduct: (id: string) => void;
 }
+const initialProducts: Product[] = [
+  { id: 'prod-1', name: 'Web Development', description: 'Full-stack web development services.', unitPrice: 2500, category: 'Services' },
+  { id: 'prod-2', name: 'UI/UX Design', description: 'User interface and experience design.', unitPrice: 1500, category: 'Services' },
+  { id: 'prod-3', name: 'SaaS Subscription', description: 'Monthly subscription for our software.', unitPrice: 49.99, category: 'Software' },
+  { id: 'prod-4', name: 'Consulting Hour', description: 'One hour of technical consulting.', unitPrice: 150, category: 'Services' },
+];
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: [],
-  isLoading: true,
-  error: null,
-  fetchProducts: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const products = await getProducts();
-      set({ products, isLoading: false });
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      set({ error: errorMessage, isLoading: false });
-      toast.error("Failed to load products. Please try again later.");
-    }
-  },
+  products: initialProducts,
+  getProducts: () => get().products,
   getProductById: (id) => get().products.find(p => p.id === id),
-  addProduct: async (product) => {
-    const newProduct = await apiAddProduct(product);
+  addProduct: (product) => {
+    const newProduct = { ...product, id: uuidv4() };
     set(state => ({ products: [...state.products, newProduct] }));
   },
-  updateProduct: async (updatedProduct) => {
-    const returnedProduct = await apiUpdateProduct(updatedProduct);
+  updateProduct: (updatedProduct) => {
     set(state => ({
       products: state.products.map(product =>
-        product.id === returnedProduct.id ? returnedProduct : product
+        product.id === updatedProduct.id ? updatedProduct : product
       ),
     }));
   },
-  deleteProduct: async (id) => {
-    await apiDeleteProduct(id);
+  deleteProduct: (id) => {
     set(state => ({
       products: state.products.filter(product => product.id !== id),
     }));
   },
 }));
-// Initial fetch
-useProductStore.getState().fetchProducts();

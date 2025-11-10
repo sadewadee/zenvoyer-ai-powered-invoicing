@@ -26,3 +26,10 @@ export interface Client {
   address: string;
   phone: string;
 }
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  unitPrice: number;
+  category?: string;
+}
