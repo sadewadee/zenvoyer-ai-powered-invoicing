@@ -2,15 +2,28 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import { Button } from '@/components/ui/button';
 import { InvoicePreview } from '@/components/InvoicePreview';
-import { ArrowLeft, Download, Printer, Send } from 'lucide-react';
+import { ArrowLeft, Download, Printer, Send, Clipboard } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
+import { Toaster, toast } from 'sonner';
 export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const getInvoiceById = useInvoiceStore((state) => state.getInvoiceById);
   const invoice = id ? getInvoiceById(id) : undefined;
+  const handleSendInvoice = () => {
+    toast.success(`Invoice ${invoice?.invoiceNumber} sent successfully!`);
+  };
+  const handleShareInvoice = () => {
+    if (!invoice) return;
+    const url = `${window.location.origin}/share/invoice/${invoice.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('Shareable link copied to clipboard!');
+    }, () => {
+      toast.error('Failed to copy link.');
+    });
+  };
   const handleDownloadPdf = () => {
     if (!invoice) return;
     const doc = new jsPDF();
@@ -71,28 +84,35 @@ export function InvoiceDetailPage() {
     );
   }
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => navigate('/app/invoices')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Invoices
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Send className="mr-2 h-4 w-4" />
-            Send Invoice
+    <>
+      <Toaster position="top-right" />
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Button variant="outline" onClick={() => navigate('/app/invoices')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Invoices
           </Button>
-          <Button variant="outline" onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print
-          </Button>
-          <Button onClick={handleDownloadPdf}>
-            <Download className="mr-2 h-4 w-4" />
-            Download PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleSendInvoice}>
+              <Send className="mr-2 h-4 w-4" />
+              Send Invoice
+            </Button>
+            <Button variant="outline" onClick={handleShareInvoice}>
+              <Clipboard className="mr-2 h-4 w-4" />
+              Share
+            </Button>
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print
+            </Button>
+            <Button onClick={handleDownloadPdf}>
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
+          </div>
         </div>
+        <InvoicePreview invoice={invoice} />
       </div>
-      <InvoicePreview invoice={invoice} />
-    </div>
+    </>
   );
 }

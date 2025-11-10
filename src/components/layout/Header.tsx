@@ -12,7 +12,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useNavigate } from 'react-router-dom';
-export function Header() {
+interface HeaderProps {
+  title: string;
+}
+export function Header({ title }: HeaderProps) {
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
   const navigate = useNavigate();
@@ -26,8 +29,7 @@ export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-gray-950">
       <div className="flex items-center gap-4">
-        {/* Page Title can be dynamic */}
-        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <h1 className="text-xl font-semibold">{title}</h1>
       </div>
       <div className="flex items-center gap-4">
         <div className="relative">

@@ -21,6 +21,7 @@ import { ProductsPage } from '@/pages/app/ProductsPage';
 import { SettingsPage } from '@/pages/app/SettingsPage';
 import { SuperAdminPage } from '@/pages/admin/SuperAdminPage';
 import { SupportPage } from '@/pages/admin/SupportPage';
+import { PublicInvoicePage } from '@/pages/PublicInvoicePage';
 const router = createBrowserRouter([
   {
     path: "/",
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     element: <SignupPage />,
+  },
+  {
+    path: "/share/invoice/:id",
+    element: <PublicInvoicePage />,
   },
   {
     element: <ProtectedRoutes />,

@@ -7,7 +7,6 @@ const titleMap: Record<string, string> = {
   '/app/settings': 'Settings',
   '/admin/super': 'Platform Management',
   '/admin/support': 'Support Dashboard',
-  '/app/reports': 'Reports',
 };
 export function usePageTitle(): string {
   const location = useLocation();
@@ -16,5 +15,5 @@ export function usePageTitle(): string {
   if (pathname.startsWith('/app/invoices/')) {
     return 'Invoice Details';
   }
-  return titleMap[pathname] || 'Zenvoyer';
+  return titleMap[pathname] || 'Zenitho';
 }
