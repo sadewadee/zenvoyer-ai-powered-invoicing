@@ -1,75 +1,40 @@
 import { create } from 'zustand';
+import { v4 as uuidv4 } from 'uuid';
 import type { UserRole } from '@/lib/auth';
-import type { ManagedUser } from '@/types';
-import { getManagedUsers, updateUserRole as apiUpdateUserRole, toggleUserStatus as apiToggleUserStatus, updateUserPlan as apiUpdateUserPlan } from '@/lib/api-client';
+export interface ManagedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: 'Active' | 'Banned';
+  createdAt: Date;
+}
 interface UserManagementState {
   users: ManagedUser[];
-  isLoading: boolean;
-  error: string | null;
-  fetchUsers: () => Promise<void>;
-  addUser: (user: ManagedUser) => void;
-  updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
-  toggleUserStatus: (userId: string) => Promise<void>;
-  updateUserPlan: (userId: string, plan: 'Free' | 'Pro') => Promise<void>;
+  updateUserRole: (userId: string, newRole: UserRole) => void;
+  toggleUserStatus: (userId: string) => void;
 }
-export const useUserManagementStore = create<UserManagementState>((set, get) => ({
-  users: [],
-  isLoading: true,
-  error: null,
-  fetchUsers: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const users = await getManagedUsers();
-      const typedUsers = users.map(u => ({ ...u, createdAt: new Date(u.createdAt) }));
-      set({ users: typedUsers, isLoading: false });
-    } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
-    }
-  },
-  addUser: (user) => {
-    set(state => ({
-      users: [...state.users, { ...user, createdAt: new Date(user.createdAt) }]
+const initialUsers: ManagedUser[] = [
+  { id: 'user-123', name: 'Alex Johnson', email: 'user@zenitho.app', role: 'USER', status: 'Active', createdAt: new Date('2023-01-15') },
+  { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenitho.app', role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20') },
+  { id: 'super-789', name: 'Sam Chen', email: 'super@zenitho.app', role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01') },
+  { id: 'user-002', name: 'Casey Lee', email: 'casey@example.com', role: 'USER', status: 'Active', createdAt: new Date('2023-03-10') },
+  { id: 'user-003', name: 'Jordan Miller', email: 'jordan@example.com', role: 'USER', status: 'Banned', createdAt: new Date('2023-04-05') },
+];
+export const useUserManagementStore = create<UserManagementState>((set) => ({
+  users: initialUsers,
+  updateUserRole: (userId, newRole) => {
+    set((state) => ({
+      users: state.users.map((user) =>
+        user.id === userId ? { ...user, role: newRole } : user
+      ),
     }));
   },
-  updateUserRole: async (userId, newRole) => {
-    const originalUsers = get().users;
-    const optimisticUpdate = originalUsers.map(user =>
-      user.id === userId ? { ...user, role: newRole } : user
-    );
-    set({ users: optimisticUpdate });
-    try {
-      await apiUpdateUserRole(userId, newRole);
-    } catch (error) {
-      set({ users: originalUsers, error: (error as Error).message });
-      throw error;
-    }
-  },
-  toggleUserStatus: async (userId) => {
-    const originalUsers = get().users;
-    const optimisticUpdate = originalUsers.map(user =>
-      user.id === userId ? { ...user, status: user.status === 'Active' ? ('Banned' as const) : ('Active' as const) } : user
-    );
-    set({ users: optimisticUpdate });
-    try {
-      await apiToggleUserStatus(userId);
-    } catch (error) {
-      set({ users: originalUsers, error: (error as Error).message });
-      throw error;
-    }
-  },
-  updateUserPlan: async (userId, plan) => {
-    const originalUsers = get().users;
-    const optimisticUpdate = originalUsers.map(user =>
-      user.id === userId ? { ...user, plan } : user
-    );
-    set({ users: optimisticUpdate });
-    try {
-      await apiUpdateUserPlan(userId, plan);
-    } catch (error) {
-      set({ users: originalUsers, error: (error as Error).message });
-      throw error;
-    }
+  toggleUserStatus: (userId) => {
+    set((state) => ({
+      users: state.users.map((user) =>
+        user.id === userId ? { ...user, status: user.status === 'Active' ? 'Banned' : 'Active' } : user
+      ),
+    }));
   },
 }));
-// Initial fetch for admin panel
-useUserManagementStore.getState().fetchUsers();

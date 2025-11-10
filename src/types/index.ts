@@ -1,3 +1,4 @@
+import { UserRole } from "@/lib/auth";
 export type InvoiceStatus = 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Partial';
 export interface LineItem {
   id: string;
@@ -46,4 +47,12 @@ export interface SubUser {
   email: string;
   status: 'Active' | 'Pending';
   permissions: SubUserPermissions;
+}
+export interface ManagedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: 'Active' | 'Banned';
+  createdAt: Date;
 }
