@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -52,9 +52,12 @@ const permissionGroups = userPermissions.reduce((acc, perm) => {
   return acc;
 }, {} as Record<string, { id: Permission; label: string }[]>);
 export function TeamSettings() {
-  const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamStore();
+  const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember, fetchTeamMembers, isLoading } = useTeamStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<SubUser | undefined>(undefined);
+  useEffect(() => {
+    fetchTeamMembers();
+  }, [fetchTeamMembers]);
   const defaultPermissions = userPermissions.reduce((acc, perm) => {
     acc[perm.id] = perm.id === 'dashboard:view';
     return acc;
@@ -89,15 +92,27 @@ export function TeamSettings() {
     setSelectedMember(undefined);
     form.reset();
   };
-  const onSubmit = (values: TeamMemberFormValues) => {
-    if (selectedMember) {
-      updateTeamMember({ ...selectedMember, ...values });
-      toast.success('Team member updated!');
-    } else {
-      addTeamMember(values);
-      toast.success('Invitation sent to new team member!');
+  const onSubmit = async (values: TeamMemberFormValues) => {
+    try {
+      if (selectedMember) {
+        await updateTeamMember({ ...selectedMember, ...values });
+        toast.success('Team member updated!');
+      } else {
+        await addTeamMember(values);
+        toast.success('Invitation sent to new team member!');
+      }
+      handleCloseForm();
+    } catch (error) {
+      toast.error((error as Error).message);
     }
-    handleCloseForm();
+  };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTeamMember(id);
+      toast.success('Team member removed.');
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
   };
   return (
     <>
@@ -126,35 +141,39 @@ export function TeamSettings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teamMembers.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.name}</TableCell>
-                  <TableCell>{member.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>
-                      {member.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenForm(member)}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit Permissions
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => deleteTeamMember(member.id)} className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" /> Remove Member
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                <TableRow><TableCell colSpan={4} className="text-center">Loading team members...</TableCell></TableRow>
+              ) : (
+                teamMembers.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell className="font-medium">{member.name}</TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>
+                        {member.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenForm(member)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit Permissions
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(member.id)} className="text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" /> Remove Member
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

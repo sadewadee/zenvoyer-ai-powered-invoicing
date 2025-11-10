@@ -1,7 +1,7 @@
 import { Agent } from 'agents';
 import { v4 as uuidv4 } from 'uuid';
 import type { Env } from './core-utils';
-import type { BusinessState, Invoice, Client, Product } from './types';
+import type { BusinessState, Invoice, Client, Product, SubUser } from './types';
 const calculateTotals = (lineItems: any[], discount: number, tax: number) => {
   const subtotal = lineItems.reduce((acc, item) => acc + item.total, 0);
   const discountAmount = subtotal * (discount / 100);
@@ -14,6 +14,7 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     invoices: [],
     clients: [],
     products: [],
+    teamMembers: [],
     settings: {
       paymentGateways: {},
       theme: { primaryColor: '221.2 83.2% 53.3%' },
@@ -103,6 +104,26 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     this.setState({ ...this.state, products: this.state.products.filter(p => p.id !== id) });
     return Response.json({ success: true });
   }
+  // --- Team Members ---
+  getTeamMembers(): Response {
+    return Response.json({ success: true, data: this.state.teamMembers });
+  }
+  addTeamMember(memberData: Omit<SubUser, 'id' | 'status'>): Response {
+    const newMember: SubUser = { ...memberData, id: uuidv4(), status: 'Pending' };
+    this.setState({ ...this.state, teamMembers: [...this.state.teamMembers, newMember] });
+    return Response.json({ success: true, data: newMember });
+  }
+  updateTeamMember(updatedMember: SubUser): Response {
+    this.setState({
+      ...this.state,
+      teamMembers: this.state.teamMembers.map(m => (m.id === updatedMember.id ? updatedMember : m)),
+    });
+    return Response.json({ success: true, data: updatedMember });
+  }
+  deleteTeamMember(id: string): Response {
+    this.setState({ ...this.state, teamMembers: this.state.teamMembers.filter(m => m.id !== id) });
+    return Response.json({ success: true });
+  }
   // --- Main Request Handler ---
   async onRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -126,6 +147,12 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
         if (method === 'POST') return this.addProduct(await request.json());
         if (method === 'PUT') return this.updateProduct(await request.json());
         if (method === 'DELETE') return this.deleteProduct(path.split('/')[2]);
+      }
+      if (path.startsWith('/team')) {
+        if (method === 'GET') return this.getTeamMembers();
+        if (method === 'POST') return this.addTeamMember(await request.json());
+        if (method === 'PUT') return this.updateTeamMember(await request.json());
+        if (method === 'DELETE') return this.deleteTeamMember(path.split('/')[2]);
       }
     } catch (e) {
       return Response.json({ success: false, error: (e as Error).message }, { status: 500 });

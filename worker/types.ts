@@ -43,13 +43,26 @@ export interface Product {
   cost?: number;
   category?: string;
 }
-export interface SubUserPermissions {
-  canViewInvoices: boolean;
-  canCreateInvoice: boolean;
-  canEditInvoice: boolean;
-  canDeleteInvoice: boolean;
-  canManageClients: boolean;
-}
+export type Permission =
+  | 'dashboard:view'
+  | 'invoices:view'
+  | 'invoices:create'
+  | 'invoices:edit'
+  | 'invoices:delete'
+  | 'clients:view'
+  | 'clients:create'
+  | 'clients:edit'
+  | 'clients:delete'
+  | 'products:view'
+  | 'products:create'
+  | 'products:edit'
+  | 'products:delete'
+  | 'reports:view'
+  | 'settings:view'
+  | 'team:manage'
+  | 'admin:support'
+  | 'admin:super';
+export type SubUserPermissions = Partial<Record<Permission, boolean>>;
 export interface SubUser {
   id: string;
   name: string;
@@ -68,6 +81,7 @@ export interface BusinessState {
   invoices: Invoice[];
   clients: Client[];
   products: Product[];
+  teamMembers: SubUser[];
   settings: {
     paymentGateways: Record<string, PaymentGateway>;
     theme: {

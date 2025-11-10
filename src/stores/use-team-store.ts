@@ -1,56 +1,46 @@
 import { create } from 'zustand';
-import { v4 as uuidv4 } from 'uuid';
-import type { SubUser, SubUserPermissions } from '@/types';
+import type { SubUser } from '@/types';
+import { getTeamMembers, addTeamMember as apiAddTeamMember, updateTeamMember as apiUpdateTeamMember, deleteTeamMember as apiDeleteTeamMember } from '@/lib/api-client';
 interface TeamState {
   teamMembers: SubUser[];
-  addTeamMember: (member: Omit<SubUser, 'id' | 'status'>) => void;
-  updateTeamMember: (member: SubUser) => void;
-  deleteTeamMember: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  fetchTeamMembers: () => Promise<void>;
+  addTeamMember: (member: Omit<SubUser, 'id' | 'status'>) => Promise<void>;
+  updateTeamMember: (member: SubUser) => Promise<void>;
+  deleteTeamMember: (id: string) => Promise<void>;
 }
-const initialTeamMembers: SubUser[] = [
-  {
-    id: 'subuser-1',
-    name: 'Jane Doe',
-    email: 'jane.doe@example.com',
-    status: 'Active',
-    permissions: {
-      'dashboard:view': true,
-      'invoices:view': true,
-      'invoices:create': true,
-      'clients:view': true,
-    },
-  },
-  {
-    id: 'subuser-2',
-    name: 'John Smith',
-    email: 'john.smith@example.com',
-    status: 'Pending',
-    permissions: {
-      'dashboard:view': true,
-      'invoices:view': true,
-    },
-  },
-];
 export const useTeamStore = create<TeamState>((set) => ({
-  teamMembers: initialTeamMembers,
-  addTeamMember: (member) => {
-    const newMember: SubUser = {
-      ...member,
-      id: uuidv4(),
-      status: 'Pending',
-    };
-    set((state) => ({ teamMembers: [...state.teamMembers, newMember] }));
+  teamMembers: [],
+  isLoading: true,
+  error: null,
+  fetchTeamMembers: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const teamMembers = await getTeamMembers();
+      set({ teamMembers, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+    }
   },
-  updateTeamMember: (updatedMember) => {
-    set((state) => ({
-      teamMembers: state.teamMembers.map((member) =>
-        member.id === updatedMember.id ? updatedMember : member
+  addTeamMember: async (memberData) => {
+    const newMember = await apiAddTeamMember(memberData);
+    set(state => ({ teamMembers: [...state.teamMembers, newMember] }));
+  },
+  updateTeamMember: async (updatedMember) => {
+    const returnedMember = await apiUpdateTeamMember(updatedMember);
+    set(state => ({
+      teamMembers: state.teamMembers.map(member =>
+        member.id === returnedMember.id ? returnedMember : member
       ),
     }));
   },
-  deleteTeamMember: (id) => {
-    set((state) => ({
-      teamMembers: state.teamMembers.filter((member) => member.id !== id),
+  deleteTeamMember: async (id) => {
+    await apiDeleteTeamMember(id);
+    set(state => ({
+      teamMembers: state.teamMembers.filter(member => member.id !== id),
     }));
   },
 }));
+// Initial fetch
+useTeamStore.getState().fetchTeamMembers();

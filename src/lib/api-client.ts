@@ -1,4 +1,4 @@
-import type { Invoice, Client, Product } from '@/types';
+import type { Invoice, Client, Product, SubUser } from '@/types';
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
@@ -63,3 +63,8 @@ export const getProducts = () => api.get<Product[]>('/products');
 export const addProduct = (product: Omit<Product, 'id'>) => api.post<Product>('/products', product);
 export const updateProduct = (product: Product) => api.put<Product>(`/products`, product);
 export const deleteProduct = (id: string) => api.delete(`/products/${id}`);
+// Team API
+export const getTeamMembers = () => api.get<SubUser[]>('/team');
+export const addTeamMember = (member: Omit<SubUser, 'id' | 'status'>) => api.post<SubUser>('/team', member);
+export const updateTeamMember = (member: SubUser) => api.put<SubUser>('/team', member);
+export const deleteTeamMember = (id: string) => api.delete(`/team/${id}`);
