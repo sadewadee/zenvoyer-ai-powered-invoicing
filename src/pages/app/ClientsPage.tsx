@@ -31,6 +31,7 @@ export function ClientsPage() {
   const { isPro } = useSubscription();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -70,8 +71,31 @@ export function ClientsPage() {
     setSelectedClient(undefined);
   };
   const handleExport = () => {
+    const headers = ["name", "email", "address", "phone"];
+    const csvContent = [
+      headers.join(","),
+      ...clients.map(client => headers.map(header => `"${client[header as keyof Client]}"`).join(","))
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "zenvoyer-clients.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
     toast.success("Client data exported successfully!");
   };
+  const handleImport = () => {
+    setIsImportDialogOpen(true);
+  };
+  const handleMockUpload = () => {
+    toast.info("File upload is a demo. In a real app, this would process the CSV.");
+    setIsImportDialogOpen(false);
+  }
   return (
     <>
       <Toaster position="top-right" />
@@ -82,7 +106,7 @@ export function ClientsPage() {
             <TooltipProvider>
               {isPro ? (
                 <>
-                  {can('clients:create') && <Button variant="outline" disabled><Upload className="mr-2 h-4 w-4" /> Import</Button>}
+                  {can('clients:create') && <Button variant="outline" onClick={handleImport}><Upload className="mr-2 h-4 w-4" /> Import</Button>}
                   {can('clients:view') && <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>}
                 </>
               ) : (
@@ -189,6 +213,25 @@ export function ClientsPage() {
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setSelectedClient(undefined)}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Import Clients</AlertDialogTitle>
+              <AlertDialogDescription>
+                Upload a CSV file to bulk-import clients. Please ensure your file follows the correct format.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="text-sm space-y-2">
+              <p>Your CSV file must have the following columns in this order:</p>
+              <code className="bg-muted p-2 rounded-md block text-xs">name,email,address,phone</code>
+              <Button variant="link" size="sm" className="p-0 h-auto">Download Sample CSV</Button>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleMockUpload}>Upload File</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

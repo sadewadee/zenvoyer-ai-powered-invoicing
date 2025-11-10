@@ -1,17 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, Scale } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useInvoiceStore } from "@/stores/use-invoice-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-const chartData = [
-  { name: 'Jan', revenue: 4000, profit: 2400 },
-  { name: 'Feb', revenue: 3000, profit: 1398 },
-  { name: 'Mar', revenue: 5000, profit: 3800 },
-  { name: 'Apr', revenue: 4500, profit: 2900 },
-  { name: 'May', revenue: 6000, profit: 4800 },
-  { name: 'Jun', revenue: 5500, profit: 3800 },
-];
+import { format, getMonth, getYear } from 'date-fns';
 export function ReportsPage() {
   const { isPro } = useSubscription();
   const invoices = useInvoiceStore(state => state.invoices);
@@ -30,6 +23,23 @@ export function ReportsPage() {
     { title: "Net Profit", icon: TrendingUp, value: `Rp${netProfit.toLocaleString('id-ID')}` },
     { title: "Profit Margin", icon: Scale, value: `${profitMargin.toFixed(2)}%` },
   ];
+  const monthlyData = paidInvoices.reduce((acc, invoice) => {
+    const month = getMonth(invoice.issueDate);
+    const year = getYear(invoice.issueDate);
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    if (!acc[key]) {
+      acc[key] = {
+        name: format(invoice.issueDate, 'MMM yy'),
+        revenue: 0,
+        profit: 0,
+      };
+    }
+    const invoiceCost = invoice.lineItems.reduce((sum, item) => sum + (item.cost || 0) * item.quantity, 0);
+    acc[key].revenue += invoice.total;
+    acc[key].profit += (invoice.total - invoiceCost);
+    return acc;
+  }, {} as Record<string, { name: string; revenue: number; profit: number }>);
+  const chartData = Object.values(monthlyData).sort((a, b) => a.name.localeCompare(b.name));
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Profit Report</h1>

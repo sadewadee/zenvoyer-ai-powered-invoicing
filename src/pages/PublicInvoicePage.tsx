@@ -1,19 +1,21 @@
 import { useParams, Link } from 'react-router-dom';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
-import { useUserManagementStore } from '@/stores/use-user-management-store';
-import { useClientStore } from '@/stores/use-client-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InvoicePreview } from '@/components/InvoicePreview';
 import { Sparkles } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import { useSettingsStore } from '@/stores/use-settings-store';
+import type { PaymentGateway } from '@/types';
 export function PublicInvoicePage() {
   const { id } = useParams<{ id: string }>();
   const getInvoiceById = useInvoiceStore((state) => state.getInvoiceById);
   const invoice = id ? getInvoiceById(id) : undefined;
-  // This is a mock to determine if the invoice owner is a Pro user.
-  // In a real app, this data would come from the backend with the invoice.
-  const isProUser = true;
+  // In a real app, you would fetch the invoice owner's settings based on the invoice data.
+  // Here, we'll use the logged-in user's settings as a mock for the invoice owner's settings.
+  const settings = useSettingsStore(state => state.settings);
+  const isProUser = true; // Assuming public invoices can only be paid if owner is Pro.
+  const enabledGateways = settings ? Object.values(settings.paymentGateways).filter(g => g.isEnabled) : [];
   const handlePayment = (gateway: string) => {
     toast.info(`Redirecting to ${gateway} for payment... (demo)`);
   };
@@ -50,16 +52,18 @@ export function PublicInvoicePage() {
               </div>
             )}
           </div>
-          {invoice && isProUser && (
+          {invoice && isProUser && enabledGateways.length > 0 && (
             <div className="lg:col-span-1">
               <Card>
                 <CardHeader>
                   <CardTitle>Pay Online</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button className="w-full" onClick={() => handlePayment('Stripe')}>Pay with Stripe</Button>
-                  <Button className="w-full" onClick={() => handlePayment('PayPal')}>Pay with PayPal</Button>
-                  <Button className="w-full" onClick={() => handlePayment('Xendit')}>Pay with Xendit</Button>
+                  {enabledGateways.map((gateway: PaymentGateway) => (
+                    <Button key={gateway.name} className="w-full" onClick={() => handlePayment(gateway.name)}>
+                      Pay with {gateway.name}
+                    </Button>
+                  ))}
                 </CardContent>
               </Card>
             </div>

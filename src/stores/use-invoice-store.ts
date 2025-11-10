@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Invoice } from '@/types';
+import type { Invoice, InvoiceStatus } from '@/types';
 import { getInvoices, addInvoice as apiAddInvoice, updateInvoice as apiUpdateInvoice, deleteInvoice as apiDeleteInvoice } from '@/lib/api-client';
 interface InvoiceState {
   invoices: Invoice[];
@@ -31,6 +31,18 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     set(state => ({ invoices: [...state.invoices, {...newInvoice, issueDate: new Date(newInvoice.issueDate), dueDate: new Date(newInvoice.dueDate)}] }));
   },
   updateInvoice: async (updatedInvoice) => {
+    let newStatus: InvoiceStatus = updatedInvoice.status;
+    if (updatedInvoice.amountPaid <= 0) {
+      newStatus = 'Unpaid';
+    } else if (updatedInvoice.amountPaid >= updatedInvoice.total) {
+      newStatus = 'Paid';
+    } else {
+      newStatus = 'Partial';
+    }
+    // Don't override 'Overdue' status if it's already set and not paid
+    if (updatedInvoice.status !== 'Overdue' || newStatus === 'Paid') {
+      updatedInvoice.status = newStatus;
+    }
     const returnedInvoice = await apiUpdateInvoice(updatedInvoice);
     set(state => ({
       invoices: state.invoices.map(invoice =>
