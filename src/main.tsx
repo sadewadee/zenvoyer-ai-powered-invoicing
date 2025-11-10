@@ -22,6 +22,7 @@ import { SettingsPage } from '@/pages/app/SettingsPage';
 import { SuperAdminPage } from '@/pages/admin/SuperAdminPage';
 import { SupportPage } from '@/pages/admin/SupportPage';
 import { PublicInvoicePage } from '@/pages/PublicInvoicePage';
+import { SetupWizardPage } from '@/pages/SetupWizardPage';
 const router = createBrowserRouter([
   {
     path: "/",
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: "/admin/support",
         element: <SupportPage />,
+      },
+      {
+        path: "/app/setup",
+        element: <SetupWizardPage />,
       },
     ],
   },

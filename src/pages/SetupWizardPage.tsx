@@ -12,7 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Sparkles, Building, User, Check } from 'lucide-react';
 import { useClientStore } from '@/stores/use-client-store';
-import { useAuthStore } from '@/stores/use-auth-store';
 const businessSchema = z.object({
   companyName: z.string().min(2, 'Company name is required.'),
   address: z.string().min(10, 'Please enter a full address.'),
@@ -33,7 +32,6 @@ export function SetupWizardPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
   const addClient = useClientStore(state => state.addClient);
-  const updateBusinessStage = useAuthStore(state => state.updateBusinessStage);
   const businessForm = useForm<BusinessFormValues>({
     resolver: zodResolver(businessSchema),
     defaultValues: { companyName: '', address: '' },
@@ -59,8 +57,7 @@ export function SetupWizardPage() {
       setCurrentStep(s => s + 1);
     }
   };
-  const handleFinish = async () => {
-    await updateBusinessStage('intermediate');
+  const handleFinish = () => {
     navigate('/app/dashboard');
   };
   const progress = (currentStep / steps.length) * 100;
@@ -71,7 +68,7 @@ export function SetupWizardPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-700 mb-4">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-primary-900 dark:text-primary-50">Welcome to Zenvoyer!</h1>
+          <h1 className="text-3xl font-bold text-primary-900 dark:text-primary-50">Welcome to Zenitho!</h1>
           <p className="text-muted-foreground mt-2">Let's get your account set up in just a few steps.</p>
         </div>
         <Progress value={progress} className="mb-8" />

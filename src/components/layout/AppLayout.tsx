@@ -2,6 +2,7 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { AIChatAssistant } from '@/components/AIChatAssistant';
 type AppLayoutProps = {
   children: React.ReactNode;
 };
@@ -26,6 +27,7 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
           </footer>
         </main>
       </div>
+      <AIChatAssistant />
     </div>
   );
 }
