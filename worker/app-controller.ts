@@ -11,12 +11,13 @@ export class AppController extends DurableObject<Env> {
   }
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) {
-      const stored = await this.ctx.storage.get<Record<string, any>>(['sessions', 'users']);
-      this.sessions = new Map(Object.entries(stored.sessions || {}));
-      this.users = new Map(Object.entries(stored.users || {}));
+      const stored = await this.ctx.storage.get<Map<string, any>>(['sessions', 'users']);
+      this.sessions = new Map(Object.entries(stored.get('sessions') || {}));
+      this.users = new Map(Object.entries(stored.get('users') || {}));
       // Seed initial users if none exist
       if (this.users.size === 0) {
         this.seedInitialUsers();
+        await this.persist();
       }
       this.loaded = true;
     }
@@ -62,6 +63,28 @@ export class AppController extends DurableObject<Env> {
     await this.ensureLoaded();
     return Array.from(this.users.values());
   }
+  async updateUserRole(userId: string, role: UserRole): Promise<ManagedUser | null> {
+    await this.ensureLoaded();
+    const user = this.users.get(userId);
+    if (user) {
+      user.role = role;
+      this.users.set(userId, user);
+      await this.persist();
+      return user;
+    }
+    return null;
+  }
+  async toggleUserStatus(userId: string): Promise<ManagedUser | null> {
+    await this.ensureLoaded();
+    const user = this.users.get(userId);
+    if (user) {
+      user.status = user.status === 'Active' ? 'Banned' : 'Active';
+      this.users.set(userId, user);
+      await this.persist();
+      return user;
+    }
+    return null;
+  }
   // --- Session Management ---
   async addSession(sessionId: string, title?: string): Promise<void> {
     await this.ensureLoaded();
@@ -93,7 +116,7 @@ export class AppController extends DurableObject<Env> {
       if (path.startsWith('/sessions')) {
         if (method === 'GET') return Response.json({ success: true, data: await this.listSessions() });
         if (method === 'POST') {
-          const { sessionId, title } = await request.json();
+          const { sessionId, title } = await request.json<{ sessionId: string; title: string }>();
           await this.addSession(sessionId, title);
           return Response.json({ success: true });
         }
@@ -128,6 +151,22 @@ export class AppController extends DurableObject<Env> {
         if (method === 'GET') {
           const users = await this.listUsers();
           return Response.json({ success: true, data: users });
+        }
+        const userId = path.split('/')[2];
+        if (userId && path.endsWith('/role')) {
+          if (method === 'PUT') {
+            const { role } = await request.json<{ role: UserRole }>();
+            const updatedUser = await this.updateUserRole(userId, role);
+            if (updatedUser) return Response.json({ success: true, data: updatedUser });
+            return Response.json({ success: false, error: 'User not found' }, { status: 404 });
+          }
+        }
+        if (userId && path.endsWith('/status')) {
+          if (method === 'PUT') {
+            const updatedUser = await this.toggleUserStatus(userId);
+            if (updatedUser) return Response.json({ success: true, data: updatedUser });
+            return Response.json({ success: false, error: 'User not found' }, { status: 404 });
+          }
         }
       }
     } catch (e) {

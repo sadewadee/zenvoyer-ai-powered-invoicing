@@ -38,18 +38,26 @@ export function SuperAdminPage() {
     setSelectedUser(user);
     setIsBanDialogOpen(true);
   };
-  const onRoleSubmit = (data: RoleFormValues) => {
+  const onRoleSubmit = async (data: RoleFormValues) => {
     if (selectedUser) {
-      updateUserRole(selectedUser.id, data.role);
-      toast.success(`Role for ${selectedUser.name} updated to ${data.role}.`);
+      try {
+        await updateUserRole(selectedUser.id, data.role);
+        toast.success(`Role for ${selectedUser.name} updated to ${data.role}.`);
+      } catch (error) {
+        toast.error((error as Error).message);
+      }
     }
     setIsRoleDialogOpen(false);
     setSelectedUser(null);
   };
-  const confirmToggleBan = () => {
+  const confirmToggleBan = async () => {
     if (selectedUser) {
-      toggleUserStatus(selectedUser.id);
-      toast.success(`Status for ${selectedUser.name} has been updated.`);
+      try {
+        await toggleUserStatus(selectedUser.id);
+        toast.success(`Status for ${selectedUser.name} has been updated.`);
+      } catch (error) {
+        toast.error((error as Error).message);
+      }
     }
     setIsBanDialogOpen(false);
     setSelectedUser(null);

@@ -29,23 +29,14 @@ export function getAppController(env: Env): DurableObjectStub<AppController> {
 export async function registerSession(env: Env, sessionId: string, title?: string): Promise<void> {
   try {
     const controller = getAppController(env);
-    await controller.addSession(sessionId, title);
+    await controller.fetch(new Request(`https://.../sessions`, {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, title }),
+      headers: { 'Content-Type': 'application/json' },
+    }));
   } catch (error) {
     console.error('Failed to register session:', error);
     // Don't throw - session should work even if registration fails
-  }
-}
-/**
- * Update session activity timestamp
- * Called when a session receives messages
- */
-export async function updateSessionActivity(env: Env, sessionId: string): Promise<void> {
-  try {
-    const controller = getAppController(env);
-    await controller.updateSessionActivity(sessionId);
-  } catch (error) {
-    console.error('Failed to update session activity:', error);
-    // Don't throw - this is non-critical
   }
 }
 /**
@@ -55,7 +46,11 @@ export async function updateSessionActivity(env: Env, sessionId: string): Promis
 export async function unregisterSession(env: Env, sessionId: string): Promise<boolean> {
   try {
     const controller = getAppController(env);
-    return await controller.removeSession(sessionId);
+    const response = await controller.fetch(new Request(`https://.../sessions/${sessionId}`, {
+      method: 'DELETE',
+    }));
+    const result = await response.json<{ success: boolean }>();
+    return result.success;
   } catch (error) {
     console.error('Failed to unregister session:', error);
     return false;

@@ -1,4 +1,4 @@
-import type { Invoice, Client, Product, SubUser, Settings, ManagedUser } from '@/types';
+import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole } from '@/types';
 import type { User } from './auth';
 const handleResponse = async (response: Response) => {
   const result = await response.json();
@@ -20,11 +20,11 @@ const api = {
     });
     return handleResponse(response);
   },
-  put: async <T>(endpoint: string, body: any): Promise<T> => {
+  put: async <T>(endpoint: string, body?: any): Promise<T> => {
     const response = await fetch(endpoint, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
     return handleResponse(response);
   },
@@ -40,6 +40,8 @@ export const login = (email: string) => api.post<User>('/api/auth/login', { emai
 export const signup = (name: string, email: string) => api.post<User>('/api/auth/signup', { name, email });
 // User Management API
 export const getManagedUsers = () => api.get<ManagedUser[]>('/api/users');
+export const updateUserRole = (userId: string, role: UserRole) => api.put<ManagedUser>(`/api/users/${userId}/role`, { role });
+export const toggleUserStatus = (userId: string) => api.put<ManagedUser>(`/api/users/${userId}/status`);
 // Business Data API
 const prepareInvoicePayload = (invoice: any) => ({
   ...invoice,

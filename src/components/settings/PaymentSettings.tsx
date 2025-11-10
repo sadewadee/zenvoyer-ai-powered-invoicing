@@ -17,10 +17,10 @@ const gatewaySchema = z.object({
   apiSecret: z.string(),
 });
 const formSchema = z.object({
-  Xendit: gatewaySchema,
-  Midtrans: gatewaySchema,
-  PayPal: gatewaySchema,
-  Stripe: gatewaySchema,
+  Xendit: gatewaySchema.omit({ name: true }),
+  Midtrans: gatewaySchema.omit({ name: true }),
+  PayPal: gatewaySchema.omit({ name: true }),
+  Stripe: gatewaySchema.omit({ name: true }),
 });
 type PaymentSettingsFormValues = z.infer<typeof formSchema>;
 export function PaymentSettings() {
@@ -36,12 +36,19 @@ export function PaymentSettings() {
     }
   }, [settings, form]);
   const onSubmit = async (values: PaymentSettingsFormValues) => {
-    await updateSettings({ paymentGateways: values });
+    const fullValues = {
+      Xendit: { ...values.Xendit, name: 'Xendit' as const },
+      Midtrans: { ...values.Midtrans, name: 'Midtrans' as const },
+      PayPal: { ...values.PayPal, name: 'PayPal' as const },
+      Stripe: { ...values.Stripe, name: 'Stripe' as const },
+    };
+    await updateSettings({ paymentGateways: fullValues });
     toast.success('Payment settings saved successfully!');
   };
   if (!settings) {
     return <div>Loading settings...</div>;
   }
+  const gatewayNames = Object.keys(settings.paymentGateways) as Array<keyof typeof settings.paymentGateways>;
   return (
     <>
       <Toaster position="top-right" />
@@ -54,7 +61,7 @@ export function PaymentSettings() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent>
               <Accordion type="multiple" className="w-full" defaultValue={['Xendit']}>
-                {(Object.keys(settings.paymentGateways) as Array<keyof typeof settings.paymentGateways>).map((gatewayName) => (
+                {gatewayNames.map((gatewayName) => (
                   <AccordionItem value={gatewayName} key={gatewayName}>
                     <AccordionTrigger className="text-lg font-medium">{gatewayName}</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
