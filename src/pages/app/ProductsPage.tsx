@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useProductStore } from "@/stores/use-product-store";
 import type { Product } from "@/types";
+import { usePermissions } from "@/hooks/use-permissions";
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().optional(),
@@ -23,6 +24,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 export function ProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useProductStore();
+  const { can } = usePermissions();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
@@ -72,10 +74,12 @@ export function ProductsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Products & Services</h1>
-        <Button onClick={() => handleOpenForm()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Product
-        </Button>
+        {can('products:create') && (
+          <Button onClick={() => handleOpenForm()}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Product
+          </Button>
+        )}
       </div>
       <Card>
         <CardHeader>
@@ -88,7 +92,7 @@ export function ProductsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                { (can('products:edit') || can('products:delete')) && <TableHead className="text-right">Actions</TableHead> }
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,20 +101,22 @@ export function ProductsPage() {
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell className="text-right">${product.unitPrice.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenForm(product)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(product)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                  { (can('products:edit') || can('products:delete')) && (
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {can('products:edit') && <DropdownMenuItem onClick={() => handleOpenForm(product)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
+                          {can('products:delete') && <DropdownMenuItem onClick={() => handleDelete(product)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

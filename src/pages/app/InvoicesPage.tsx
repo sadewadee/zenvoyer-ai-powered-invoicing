@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { usePermissions } from "@/hooks/use-permissions";
 const statusColors: Record<InvoiceStatus, string> = {
   Paid: "border-transparent bg-status-paid-bg text-status-paid",
   Unpaid: "border-transparent bg-status-unpaid-bg text-status-unpaid",
@@ -24,6 +25,7 @@ const statusColors: Record<InvoiceStatus, string> = {
 };
 export function InvoicesPage() {
   const navigate = useNavigate();
+  const { can } = usePermissions();
   const invoices = useInvoiceStore((state) => state.invoices);
   const deleteInvoice = useInvoiceStore((state) => state.deleteInvoice);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -99,22 +101,24 @@ export function InvoicesPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Invoices</h1>
-        <Dialog open={isFormOpen} onOpenChange={(open) => { if (!open) handleFormClose(); else setIsFormOpen(true); }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { setSelectedInvoice(undefined); setIsFormOpen(true); }}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Invoice
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>{selectedInvoice ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[80vh] overflow-y-auto p-1 pr-4">
-              <InvoiceForm invoice={selectedInvoice} onClose={handleFormClose} />
-            </div>
-          </DialogContent>
-        </Dialog>
+        {can('invoices:create') && (
+          <Dialog open={isFormOpen} onOpenChange={(open) => { if (!open) handleFormClose(); else setIsFormOpen(true); }}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { setSelectedInvoice(undefined); setIsFormOpen(true); }}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Invoice
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>{selectedInvoice ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
+              </DialogHeader>
+              <div className="max-h-[80vh] overflow-y-auto p-1 pr-4">
+                <InvoiceForm invoice={selectedInvoice} onClose={handleFormClose} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
       <Card>
         <CardHeader>
@@ -152,9 +156,9 @@ export function InvoicesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => navigate(`/app/invoices/${invoice.id}`)}><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEdit(invoice)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                        {can('invoices:edit') && <DropdownMenuItem onClick={() => handleEdit(invoice)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
                         <DropdownMenuItem onClick={() => handleDownloadPdf(invoice)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(invoice)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                        {can('invoices:delete') && <DropdownMenuItem onClick={() => handleDelete(invoice)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

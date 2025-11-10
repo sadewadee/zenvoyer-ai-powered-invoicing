@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { useClientStore } from '@/stores/use-client-store';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
+import { usePermissions } from '@/hooks/use-permissions';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
@@ -43,6 +44,8 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const addInvoice = useInvoiceStore(state => state.addInvoice);
   const updateInvoice = useInvoiceStore(state => state.updateInvoice);
   const getNextInvoiceNumber = useInvoiceStore(state => state.getNextInvoiceNumber);
+  const { can } = usePermissions();
+  const readOnly = !can('invoices:edit');
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
     defaultValues: invoice
@@ -88,7 +91,6 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       total: (item.quantity || 0) * (item.unitPrice || 0),
     }));
     if (invoice) {
-      // Update existing invoice
       const payload: Invoice = {
         ...invoice,
         client: selectedClient,
@@ -104,7 +106,6 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       };
       await updateInvoice(payload);
     } else {
-      // Create new invoice
       const payload: Omit<Invoice, 'id'> = {
         invoiceNumber: getNextInvoiceNumber(),
         client: selectedClient,
@@ -133,7 +134,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Client</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a client" />
@@ -158,14 +159,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={readOnly}>
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={readOnly} />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -181,14 +182,14 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={readOnly}>
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={readOnly} />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -215,7 +216,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                     <FormField
                       control={form.control}
                       name={`lineItems.${index}.description`}
-                      render={({ field }) => <Input {...field} placeholder="Item description" />}
+                      render={({ field }) => <Input {...field} placeholder="Item description" disabled={readOnly} />}
                     />
                   </TableCell>
                   <TableCell>
@@ -223,11 +224,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                       control={form.control}
                       name={`lineItems.${index}.quantity`}
                       render={({ field }) => (
-                        <Input
-                          type="number"
-                          {...field}
-                          placeholder="1"
-                        />
+                        <Input type="number" {...field} placeholder="1" disabled={readOnly} />
                       )}
                     />
                   </TableCell>
@@ -236,12 +233,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                       control={form.control}
                       name={`lineItems.${index}.unitPrice`}
                       render={({ field }) => (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          {...field}
-                          placeholder="0.00"
-                        />
+                        <Input type="number" step="0.01" {...field} placeholder="0.00" disabled={readOnly} />
                       )}
                     />
                   </TableCell>
@@ -249,7 +241,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                     ${((watchedValues.lineItems?.[index]?.quantity || 0) * (watchedValues.lineItems?.[index]?.unitPrice || 0)).toFixed(2)}
                   </TableCell>
                   <TableCell>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1 || readOnly}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -257,9 +249,11 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               ))}
             </TableBody>
           </Table>
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01, total: 0.01 })}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-          </Button>
+          {!readOnly && (
+            <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: uuidv4(), description: '', quantity: 1, unitPrice: 0.01, total: 0.01 })}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+            </Button>
+          )}
         </div>
         <div className="flex justify-end">
           <div className="w-full max-w-sm space-y-4">
@@ -267,13 +261,13 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <FormField control={form.control} name="discount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Discount (%)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl><Input type="number" {...field} disabled={readOnly} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="tax" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tax (%)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl><Input type="number" {...field} disabled={readOnly} /></FormControl>
                 </FormItem>
               )} />
             </div>
@@ -285,7 +279,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <FormField control={form.control} name="amountPaid" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Amount Paid</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl><Input type="number" {...field} disabled={readOnly} /></FormControl>
                 </FormItem>
               )} />
               <div className="flex justify-between font-bold text-lg text-primary-700 dark:text-primary-400"><span>Balance Due</span><span>${balanceDue.toFixed(2)}</span></div>
@@ -298,7 +292,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           render={({ field }) => (
             <FormItem className="w-full max-w-xs">
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly}>
                 <FormControl>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                 </FormControl>
@@ -313,7 +307,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit">{invoice ? 'Update Invoice' : 'Create Invoice'}</Button>
+          {!readOnly && <Button type="submit">{invoice ? 'Update Invoice' : 'Create Invoice'}</Button>}
         </div>
       </form>
     </Form>

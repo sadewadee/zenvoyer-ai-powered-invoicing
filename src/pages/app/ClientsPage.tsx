@@ -14,6 +14,7 @@ import { PlusCircle, MoreHorizontal, Edit, Trash2, Upload, Download } from "luci
 import { useClientStore } from "@/stores/use-client-store";
 import type { Client } from "@/types";
 import { Toaster, toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
 const clientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
@@ -23,6 +24,7 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>;
 export function ClientsPage() {
   const { clients, addClient, updateClient, deleteClient } = useClientStore();
+  const { can } = usePermissions();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
@@ -76,16 +78,9 @@ export function ClientsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Clients</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleImport}>
-              <Upload className="mr-2 h-4 w-4" /> Import
-            </Button>
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Export
-            </Button>
-            <Button onClick={() => handleOpenForm()}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Client
-            </Button>
+            {can('clients:create') && <Button variant="outline" onClick={handleImport}><Upload className="mr-2 h-4 w-4" /> Import</Button>}
+            {can('clients:view') && <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>}
+            {can('clients:create') && <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> New Client</Button>}
           </div>
         </div>
         <Card>
@@ -99,7 +94,7 @@ export function ClientsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {(can('clients:edit') || can('clients:delete')) && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -108,20 +103,22 @@ export function ClientsPage() {
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.email}</TableCell>
                     <TableCell>{client.phone}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenForm(client)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(client)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    {(can('clients:edit') || can('clients:delete')) && (
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {can('clients:edit') && <DropdownMenuItem onClick={() => handleOpenForm(client)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
+                            {can('clients:delete') && <DropdownMenuItem onClick={() => handleDelete(client)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

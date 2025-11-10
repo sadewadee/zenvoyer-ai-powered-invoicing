@@ -5,7 +5,9 @@ import { TeamSettings } from "@/components/settings/TeamSettings";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 import { PaymentSettings } from "@/components/settings/PaymentSettings";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
+import { usePermissions } from "@/hooks/use-permissions";
 export function SettingsPage() {
+  const { can } = usePermissions();
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Settings</h1>
@@ -13,7 +15,7 @@ export function SettingsPage() {
         <TabsList className="flex flex-wrap h-auto justify-start">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="business">Business</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
+          {can('team:manage') && <TabsTrigger value="team">Team</TabsTrigger>}
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="theme">Theme</TabsTrigger>
@@ -24,9 +26,11 @@ export function SettingsPage() {
         <TabsContent value="business">
           <BusinessSettings />
         </TabsContent>
-        <TabsContent value="team">
-          <TeamSettings />
-        </TabsContent>
+        {can('team:manage') && (
+          <TabsContent value="team">
+            <TeamSettings />
+          </TabsContent>
+        )}
         <TabsContent value="subscription">
           <SubscriptionSettings />
         </TabsContent>
