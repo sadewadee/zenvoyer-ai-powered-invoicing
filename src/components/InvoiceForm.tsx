@@ -24,12 +24,8 @@ const lineItemSchema = z.object({
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
-  issueDate: z.date({
-    required_error: 'Issue date is required',
-  }),
-  dueDate: z.date({
-    required_error: 'Due date is required',
-  }),
+  issueDate: z.date(),
+  dueDate: z.date(),
   lineItems: z.array(lineItemSchema).min(1, 'At least one line item is required'),
   discount: z.coerce.number().min(0).max(100).default(0),
   tax: z.coerce.number().min(0).max(100).default(0),

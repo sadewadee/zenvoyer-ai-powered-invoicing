@@ -45,10 +45,14 @@ export function ProductsPage() {
     form.reset();
   };
   const onSubmit = (values: ProductFormValues) => {
+    const productData = {
+      ...values,
+      description: values.description || '',
+    };
     if (selectedProduct) {
-      updateProduct({ ...selectedProduct, ...values });
+      updateProduct({ ...selectedProduct, ...productData });
     } else {
-      addProduct(values);
+      addProduct(productData);
     }
     handleCloseForm();
   };

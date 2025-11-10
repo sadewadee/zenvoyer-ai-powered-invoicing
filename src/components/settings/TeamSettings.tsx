@@ -16,11 +16,11 @@ import { useTeamStore } from '@/stores/use-team-store';
 import type { SubUser, SubUserPermissions } from '@/types';
 import { Toaster, toast } from 'sonner';
 const permissionsSchema = z.object({
-  canViewInvoices: z.boolean().default(false),
-  canCreateInvoice: z.boolean().default(false),
-  canEditInvoice: z.boolean().default(false),
-  canDeleteInvoice: z.boolean().default(false),
-  canManageClients: z.boolean().default(false),
+  canViewInvoices: z.boolean(),
+  canCreateInvoice: z.boolean(),
+  canEditInvoice: z.boolean(),
+  canDeleteInvoice: z.boolean(),
+  canManageClients: z.boolean(),
 });
 const teamMemberSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
