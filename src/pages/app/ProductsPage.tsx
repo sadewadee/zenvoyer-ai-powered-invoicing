@@ -45,19 +45,15 @@ export function ProductsPage() {
     form.reset();
   };
   const onSubmit = (values: ProductFormValues) => {
+    const productData = {
+      ...values,
+      description: values.description || '',
+      category: values.category || '',
+    };
     if (selectedProduct) {
-      updateProduct({
-        ...selectedProduct,
-        ...values,
-        description: values.description || '',
-        category: values.category || '',
-      });
+      updateProduct({ ...selectedProduct, ...productData });
     } else {
-      addProduct({
-        ...values,
-        description: values.description || '',
-        category: values.category || '',
-      });
+      addProduct(productData);
     }
     handleCloseForm();
   };

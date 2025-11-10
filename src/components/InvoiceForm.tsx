@@ -42,6 +42,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const clients = useClientStore(state => state.clients);
   const addInvoice = useInvoiceStore(state => state.addInvoice);
   const updateInvoice = useInvoiceStore(state => state.updateInvoice);
+  const getNextInvoiceNumber = useInvoiceStore(state => state.getNextInvoiceNumber);
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
     defaultValues: invoice
@@ -86,25 +87,39 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       ...item,
       total: (item.quantity || 0) * (item.unitPrice || 0),
     }));
-    const invoicePayload = {
-      client: selectedClient,
-      issueDate: data.issueDate,
-      dueDate: data.dueDate,
-      lineItems: finalLineItems,
-      discount: data.discount,
-      tax: data.tax,
-      amountPaid: data.amountPaid,
-      status: data.status,
-      subtotal,
-      total,
-    };
     if (invoice) {
-      await updateInvoice({
+      // Update existing invoice
+      const payload: Invoice = {
         ...invoice,
-        ...invoicePayload,
-      });
+        client: selectedClient,
+        issueDate: data.issueDate,
+        dueDate: data.dueDate,
+        lineItems: finalLineItems,
+        discount: data.discount,
+        tax: data.tax,
+        amountPaid: data.amountPaid,
+        status: data.status,
+        subtotal,
+        total,
+      };
+      await updateInvoice(payload);
     } else {
-      await addInvoice(invoicePayload);
+      // Create new invoice
+      const payload: Omit<Invoice, 'id'> = {
+        invoiceNumber: getNextInvoiceNumber(),
+        client: selectedClient,
+        issueDate: data.issueDate,
+        dueDate: data.dueDate,
+        lineItems: finalLineItems,
+        discount: data.discount,
+        tax: data.tax,
+        amountPaid: data.amountPaid,
+        status: data.status,
+        subtotal,
+        total,
+        activityLog: [{ date: new Date(), action: 'Invoice Created' }],
+      };
+      await addInvoice(payload);
     }
     onClose();
   }

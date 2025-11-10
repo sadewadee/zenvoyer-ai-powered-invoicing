@@ -38,10 +38,20 @@ const api = {
     return handleResponse(response);
   },
 };
+// Helper to prepare invoice data for API calls
+const prepareInvoicePayload = (invoice: any) => {
+  return {
+    ...invoice,
+    clientId: invoice.client.id,
+    issueDate: new Date(invoice.issueDate).toISOString(),
+    dueDate: new Date(invoice.dueDate).toISOString(),
+    client: undefined, // Remove nested client object
+  };
+};
 // Invoice API
 export const getInvoices = () => api.get<Invoice[]>('/invoices');
-export const addInvoice = (invoice: Omit<Invoice, 'id'>) => api.post<Invoice>('/invoices', invoice);
-export const updateInvoice = (invoice: Invoice) => api.put<Invoice>(`/invoices`, invoice);
+export const addInvoice = (invoice: Omit<Invoice, 'id'>) => api.post<Invoice>('/invoices', prepareInvoicePayload(invoice));
+export const updateInvoice = (invoice: Invoice) => api.put<Invoice>(`/invoices`, prepareInvoicePayload(invoice));
 export const deleteInvoice = (id: string) => api.delete(`/invoices/${id}`);
 // Client API
 export const getClients = () => api.get<Client[]>('/clients');
