@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,80 +11,57 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useTeamStore } from '@/stores/use-team-store';
-import type { SubUser, Permission } from '@/types';
+import type { SubUser, SubUserPermissions } from '@/types';
 import { Toaster, toast } from 'sonner';
-import { SUB_USER_TEMPLATES } from '@/lib/permissions';
-const userPermissions: { id: Permission; label: string; group: string }[] = [
-  { id: 'dashboard:view', label: 'View Dashboard', group: 'General' },
-  { id: 'invoices:view', label: 'View Invoices', group: 'Invoices' },
-  { id: 'invoices:create', label: 'Create Invoices', group: 'Invoices' },
-  { id: 'invoices:edit', label: 'Edit Invoices', group: 'Invoices' },
-  { id: 'invoices:delete', label: 'Delete Invoices', group: 'Invoices' },
-  { id: 'clients:view', label: 'View Clients', group: 'Clients' },
-  { id: 'clients:create', label: 'Create Clients', group: 'Clients' },
-  { id: 'clients:edit', label: 'Edit Clients', group: 'Clients' },
-  { id: 'clients:delete', label: 'Delete Clients', group: 'Clients' },
-  { id: 'products:view', label: 'View Products', group: 'Products' },
-  { id: 'products:create', label: 'Create Products', group: 'Products' },
-  { id: 'products:edit', label: 'Edit Products', group: 'Products' },
-  { id: 'products:delete', label: 'Delete Products', group: 'Products' },
-  { id: 'reports:view', label: 'View Reports', group: 'General' },
-  { id: 'settings:view', label: 'View Settings', group: 'General' },
-];
-const permissionsSchema = z.object(
-  userPermissions.reduce((acc, perm) => {
-    acc[perm.id] = z.boolean();
-    return acc;
-  }, {} as Record<Permission, z.ZodBoolean>)
-);
+const permissionsSchema = z.object({
+  canViewInvoices: z.boolean().default(false),
+  canCreateInvoice: z.boolean().default(false),
+  canEditInvoice: z.boolean().default(false),
+  canDeleteInvoice: z.boolean().default(false),
+  canManageClients: z.boolean().default(false),
+});
 const teamMemberSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
   email: z.string().email('A valid email is required.'),
   permissions: permissionsSchema,
 });
 type TeamMemberFormValues = z.infer<typeof teamMemberSchema>;
-const permissionGroups = userPermissions.reduce((acc, perm) => {
-  if (!acc[perm.group]) {
-    acc[perm.group] = [];
-  }
-  acc[perm.group].push(perm);
-  return acc;
-}, {} as Record<string, { id: Permission; label: string }[]>);
+const permissionLabels: { id: keyof SubUserPermissions; label: string }[] = [
+  { id: 'canViewInvoices', label: 'View Invoices' },
+  { id: 'canCreateInvoice', label: 'Create Invoices' },
+  { id: 'canEditInvoice', label: 'Edit Invoices' },
+  { id: 'canDeleteInvoice', label: 'Delete Invoices' },
+  { id: 'canManageClients', label: 'Manage Clients' },
+];
 export function TeamSettings() {
-  const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember, fetchTeamMembers, isLoading } = useTeamStore();
+  const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<SubUser | undefined>(undefined);
-  useEffect(() => {
-    fetchTeamMembers();
-  }, [fetchTeamMembers]);
-  const defaultPermissions = userPermissions.reduce((acc, perm) => {
-    acc[perm.id] = perm.id === 'dashboard:view';
-    return acc;
-  }, {} as Record<Permission, boolean>);
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberSchema),
     defaultValues: {
       name: '',
       email: '',
-      permissions: defaultPermissions as any,
+      permissions: {
+        canViewInvoices: true,
+        canCreateInvoice: false,
+        canEditInvoice: false,
+        canDeleteInvoice: false,
+        canManageClients: false,
+      },
     },
   });
   const handleOpenForm = (member?: SubUser) => {
     setSelectedMember(member);
     if (member) {
-      form.reset({
-        name: member.name,
-        email: member.email,
-        permissions: { ...defaultPermissions, ...member.permissions } as any,
-      });
+      form.reset(member);
     } else {
       form.reset({
         name: '',
         email: '',
-        permissions: defaultPermissions as any,
+        permissions: { canViewInvoices: true, canCreateInvoice: false, canEditInvoice: false, canDeleteInvoice: false, canManageClients: false },
       });
     }
     setIsFormOpen(true);
@@ -94,34 +71,15 @@ export function TeamSettings() {
     setSelectedMember(undefined);
     form.reset();
   };
-  const onSubmit = async (values: TeamMemberFormValues) => {
-    try {
-      if (selectedMember) {
-        await updateTeamMember({ ...selectedMember, ...values });
-        toast.success('Team member updated!');
-      } else {
-        await addTeamMember(values);
-        toast.success('Invitation sent to new team member!');
-      }
-      handleCloseForm();
-    } catch (error) {
-      toast.error((error as Error).message);
+  const onSubmit = (values: TeamMemberFormValues) => {
+    if (selectedMember) {
+      updateTeamMember({ ...selectedMember, ...values });
+      toast.success('Team member updated!');
+    } else {
+      addTeamMember(values);
+      toast.success('Invitation sent to new team member!');
     }
-  };
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteTeamMember(id);
-      toast.success('Team member removed.');
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
-  const applyTemplate = (templateKey: string) => {
-    const template = SUB_USER_TEMPLATES[templateKey];
-    if (template) {
-      const newPermissions = { ...defaultPermissions, ...template.permissions };
-      form.setValue('permissions', newPermissions as any);
-    }
+    handleCloseForm();
   };
   return (
     <>
@@ -150,45 +108,41 @@ export function TeamSettings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={4} className="text-center">Loading team members...</TableCell></TableRow>
-              ) : (
-                teamMembers.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">{member.name}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>
-                        {member.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenForm(member)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Permissions
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(member.id)} className="text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" /> Remove Member
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              {teamMembers.map((member) => (
+                <TableRow key={member.id}>
+                  <TableCell className="font-medium">{member.name}</TableCell>
+                  <TableCell>{member.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>
+                      {member.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenForm(member)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit Permissions
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => deleteTeamMember(member.id)} className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" /> Remove Member
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
       <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleCloseForm()}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{selectedMember ? 'Edit Permissions' : 'Invite New Member'}</DialogTitle>
             <DialogDescription>
@@ -197,51 +151,27 @@ export function TeamSettings() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
-                )} />
-              </div>
-              {!selectedMember && (
-                <FormItem>
-                  <FormLabel>Permission Template</FormLabel>
-                  <Select onValueChange={applyTemplate}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Apply a template..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(SUB_USER_TEMPLATES).map(([key, template]) => (
-                        <SelectItem key={key} value={key}>{template.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
+              )} />
               <div>
                 <FormLabel>Permissions</FormLabel>
-                <div className="mt-2 rounded-md border p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-64 overflow-y-auto">
-                  {Object.entries(permissionGroups).map(([groupName, perms]) => (
-                    <div key={groupName} className="space-y-2">
-                      <h4 className="font-medium text-sm">{groupName}</h4>
-                      {perms.map((p) => (
-                        <FormField
-                          key={p.id}
-                          control={form.control}
-                          name={`permissions.${p.id}`}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                              <FormLabel className="font-normal text-sm">{p.label}</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      ))}
-                    </div>
+                <div className="space-y-2 mt-2 rounded-md border p-4">
+                  {permissionLabels.map((p) => (
+                    <FormField
+                      key={p.id}
+                      control={form.control}
+                      name={`permissions.${p.id}`}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                          <FormLabel className="font-normal">{p.label}</FormLabel>
+                        </FormItem>
+                      )}
+                    />
                   ))}
                 </div>
               </div>

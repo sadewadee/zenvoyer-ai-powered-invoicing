@@ -1,38 +1,37 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProfileSettings } from "@/components/settings/ProfileSettings";
+import { BusinessSettings } from "@/components/settings/BusinessSettings";
+import { TeamSettings } from "@/components/settings/TeamSettings";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 export function SettingsPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Settings</h1>
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue="profile" className="space-y-4">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="business">Business</TabsTrigger>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="subscription">Subscription</TabsTrigger>
         </TabsList>
         <TabsContent value="profile">
-          <Card className="mt-4">
-            <CardHeader><CardTitle>Your Profile</CardTitle></CardHeader>
-            <CardContent><p>Profile settings form placeholder...</p></CardContent>
-          </Card>
+          <ProfileSettings />
         </TabsContent>
         <TabsContent value="business">
-          <Card className="mt-4">
-            <CardHeader><CardTitle>Business Details</CardTitle></CardHeader>
-            <CardContent><p>Business settings form placeholder...</p></CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="subscription">
-          <Card className="mt-4">
-            <CardHeader><CardTitle>Manage Subscription</CardTitle></CardHeader>
-            <CardContent><p>Subscription details placeholder...</p></CardContent>
-          </Card>
+          <BusinessSettings />
         </TabsContent>
         <TabsContent value="team">
-          <Card className="mt-4">
-            <CardHeader><CardTitle>Team Members</CardTitle></CardHeader>
-            <CardContent><p>Sub-user management placeholder...</p></CardContent>
+          <TeamSettings />
+        </TabsContent>
+        <TabsContent value="subscription">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manage Subscription</CardTitle>
+              <CardDescription>View your current plan and billing details.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Subscription management functionality will be implemented in a future phase.</p>
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,8 +7,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Toaster, toast } from 'sonner';
-import { useSettingsStore } from '@/stores/use-settings-store';
-import type { BusinessDetails } from '@/types';
 const businessSchema = z.object({
   companyName: z.string().min(2, 'Company name is required.'),
   address: z.string().min(10, 'Please enter a full address.'),
@@ -17,23 +14,16 @@ const businessSchema = z.object({
 });
 type BusinessFormValues = z.infer<typeof businessSchema>;
 export function BusinessSettings() {
-  const settings = useSettingsStore((state) => state.settings);
-  const updateSettings = useSettingsStore((state) => state.updateSettings);
   const form = useForm<BusinessFormValues>({
     resolver: zodResolver(businessSchema),
-    defaultValues: settings?.business || {
-      companyName: '',
-      address: '',
-      taxId: '',
+    defaultValues: {
+      companyName: 'Acme Inc.',
+      address: '123 Acme St, Business City, USA',
+      taxId: 'VAT123456789',
     },
   });
-  useEffect(() => {
-    if (settings) {
-      form.reset(settings.business);
-    }
-  }, [settings, form]);
-  const onSubmit = async (values: BusinessFormValues) => {
-    await updateSettings({ business: values as BusinessDetails });
+  const onSubmit = (values: BusinessFormValues) => {
+    console.log('Business details updated:', values);
     toast.success('Business details updated successfully!');
   };
   return (

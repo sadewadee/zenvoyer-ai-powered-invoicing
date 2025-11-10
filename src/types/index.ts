@@ -33,3 +33,17 @@ export interface Product {
   unitPrice: number;
   category?: string;
 }
+export interface SubUserPermissions {
+  canViewInvoices: boolean;
+  canCreateInvoice: boolean;
+  canEditInvoice: boolean;
+  canDeleteInvoice: boolean;
+  canManageClients: boolean;
+}
+export interface SubUser {
+  id: string;
+  name: string;
+  email: string;
+  status: 'Active' | 'Pending';
+  permissions: SubUserPermissions;
+}
