@@ -14,11 +14,10 @@ const initialTeamMembers: SubUser[] = [
     email: 'jane.doe@example.com',
     status: 'Active',
     permissions: {
-      canViewInvoices: true,
-      canCreateInvoice: true,
-      canEditInvoice: false,
-      canDeleteInvoice: false,
-      canManageClients: false,
+      'dashboard:view': true,
+      'invoices:view': true,
+      'invoices:create': true,
+      'clients:view': true,
     },
   },
   {
@@ -27,11 +26,8 @@ const initialTeamMembers: SubUser[] = [
     email: 'john.smith@example.com',
     status: 'Pending',
     permissions: {
-      canViewInvoices: true,
-      canCreateInvoice: false,
-      canEditInvoice: false,
-      canDeleteInvoice: false,
-      canManageClients: false,
+      'dashboard:view': true,
+      'invoices:view': true,
     },
   },
 ];

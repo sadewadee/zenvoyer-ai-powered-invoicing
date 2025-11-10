@@ -52,8 +52,6 @@ export function ProductsPage() {
     if (selectedProduct) {
       updateProduct({ ...selectedProduct, ...productData });
     } else {
-      // The addProduct function in the store expects Omit<Product, 'id'>.
-      // The store will add the 'id'. We pass the form values that match the creation payload.
       addProduct({
         name: productData.name,
         description: productData.description,

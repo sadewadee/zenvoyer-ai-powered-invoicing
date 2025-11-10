@@ -16,7 +16,6 @@ import { format } from 'date-fns';
 import { useClientStore } from '@/stores/use-client-store';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
-import { useEffect } from 'react';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
@@ -49,7 +48,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           clientId: invoice.client.id,
           issueDate: new Date(invoice.issueDate),
           dueDate: new Date(invoice.dueDate),
-          lineItems: invoice.lineItems.map(item => ({ ...item, total: undefined })), // Remove total for form state
+          lineItems: invoice.lineItems.map(item => ({ ...item })),
           discount: invoice.discount,
           tax: invoice.tax,
           amountPaid: invoice.amountPaid || 0,
@@ -86,10 +85,6 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       ...item,
       total: (item.quantity || 0) * (item.unitPrice || 0),
     }));
-    const finalSubtotal = finalLineItems.reduce((acc, item) => acc + item.total, 0);
-    const finalDiscountAmount = finalSubtotal * (data.discount / 100);
-    const finalTaxAmount = (finalSubtotal - finalDiscountAmount) * (data.tax / 100);
-    const finalTotal = finalSubtotal - finalDiscountAmount + finalTaxAmount;
     const invoiceData = {
       client: selectedClient,
       issueDate: data.issueDate,
@@ -99,15 +94,13 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       tax: data.tax,
       amountPaid: data.amountPaid,
       status: data.status,
-      subtotal: finalSubtotal,
-      total: finalTotal,
-      activityLog: invoice?.activityLog || [], // Preserve existing log
+      activityLog: invoice?.activityLog || [],
     };
     if (invoice) {
       await updateInvoice({ ...invoice, ...invoiceData });
     } else {
-      // The store handles id, invoiceNumber, and initial activityLog
-      const { id, invoiceNumber, activityLog, ...invoiceToAdd } = invoiceData as any;
+      // The API expects a payload without id, invoiceNumber, etc.
+      const { id, invoiceNumber, subtotal, total, ...invoiceToAdd } = invoiceData as any;
       await addInvoice(invoiceToAdd);
     }
     onClose();
