@@ -47,12 +47,12 @@ export function ProductsPage() {
   const onSubmit = (values: ProductFormValues) => {
     const productData = {
       ...values,
-      description: values.description || '',
+      description: values.description || '', // Ensure description is a string
     };
     if (selectedProduct) {
       updateProduct({ ...selectedProduct, ...productData });
     } else {
-      // The addProduct function in the store expects an object that can be extended into a full Product.
+      // The addProduct function in the store expects Omit<Product, 'id'>.
       // The store will add the 'id'. We pass the form values that match the creation payload.
       addProduct({
         name: productData.name,
