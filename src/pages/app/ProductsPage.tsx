@@ -17,7 +17,7 @@ import type { Product } from "@/types";
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().optional(),
-  unitPrice: z.coerce.number().min(0.01, "Price must be greater than 0.").default(0.01),
+  unitPrice: z.number().min(0.01, "Price must be greater than 0.").default(0.01),
   category: z.string().optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -138,7 +138,7 @@ export function ProductsPage() {
                 <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="Describe the product or service" /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="unitPrice" render={({ field }) => (
-                <FormItem><FormLabel>Unit Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Unit Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem><FormLabel>Category</FormLabel><FormControl><Input {...field} placeholder="e.g., Service, Software" /></FormControl><FormMessage /></FormItem>

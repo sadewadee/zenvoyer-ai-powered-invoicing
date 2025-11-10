@@ -19,17 +19,17 @@ import type { Invoice, Client } from '@/types';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
-  quantity: z.coerce.number().min(0.01, 'Quantity must be > 0').default(1),
-  unitPrice: z.coerce.number().min(0.01, 'Price must be > 0').default(0.01),
+  quantity: z.number().min(0.01, 'Quantity must be > 0').default(1),
+  unitPrice: z.number().min(0.01, 'Price must be > 0').default(0.01),
 });
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   issueDate: z.date(),
   dueDate: z.date(),
   lineItems: z.array(lineItemSchema).min(1, 'At least one line item is required'),
-  discount: z.coerce.number().min(0).max(100).default(0),
-  tax: z.coerce.number().min(0).max(100).default(0),
-  amountPaid: z.coerce.number().min(0).default(0),
+  discount: z.number().min(0).max(100).default(0),
+  tax: z.number().min(0).max(100).default(0),
+  amountPaid: z.number().min(0).default(0),
   status: z.enum(['Paid', 'Unpaid', 'Overdue', 'Draft', 'Partial']),
 });
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
@@ -209,14 +209,28 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                     <FormField
                       control={form.control}
                       name={`lineItems.${index}.quantity`}
-                      render={({ field }) => <Input type="number" {...field} placeholder="1" />}
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                          placeholder="1"
+                        />
+                      )}
                     />
                   </TableCell>
                   <TableCell>
                     <FormField
                       control={form.control}
                       name={`lineItems.${index}.unitPrice`}
-                      render={({ field }) => <Input type="number" {...field} placeholder="0.00" />}
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                        />
+                      )}
                     />
                   </TableCell>
                   <TableCell>
@@ -241,13 +255,13 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <FormField control={form.control} name="discount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Discount (%)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="tax" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tax (%)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                 </FormItem>
               )} />
             </div>
@@ -259,7 +273,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <FormField control={form.control} name="amountPaid" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Amount Paid</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                 </FormItem>
               )} />
               <div className="flex justify-between font-bold text-lg text-primary-700 dark:text-primary-400"><span>Balance Due</span><span>${balanceDue.toFixed(2)}</span></div>

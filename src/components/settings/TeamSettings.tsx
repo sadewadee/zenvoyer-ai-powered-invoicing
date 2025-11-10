@@ -34,7 +34,7 @@ const userPermissions: { id: Permission; label: string; group: string }[] = [
 ];
 const permissionsSchema = z.object(
   userPermissions.reduce((acc, perm) => {
-    acc[perm.id] = z.boolean().default(false);
+    acc[perm.id] = z.boolean();
     return acc;
   }, {} as Record<Permission, z.ZodBoolean>)
 );
