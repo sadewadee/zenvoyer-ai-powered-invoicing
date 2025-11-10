@@ -48,7 +48,7 @@ export function PaymentSettings() {
   if (!settings) {
     return <div>Loading settings...</div>;
   }
-  const gatewayNames = Object.keys(settings.paymentGateways) as Array<keyof typeof settings.paymentGateways>;
+  const gatewayNames = Object.keys(settings.paymentGateways) as Array<keyof PaymentSettingsFormValues>;
   return (
     <>
       <Toaster position="top-right" />

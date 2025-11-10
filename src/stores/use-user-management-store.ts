@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { UserRole } from '@/lib/auth';
 import type { ManagedUser } from '@/types';
-import { getManagedUsers, updateUserRole as apiUpdateUserRole, toggleUserStatus as apiToggleUserStatus } from '@/lib/api-client';
+import { getManagedUsers, updateUserRole as apiUpdateUserRole, toggleUserStatus as apiToggleUserStatus, updateUserPlan as apiUpdateUserPlan } from '@/lib/api-client';
 interface UserManagementState {
   users: ManagedUser[];
   isLoading: boolean;
@@ -9,6 +9,7 @@ interface UserManagementState {
   fetchUsers: () => Promise<void>;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
   toggleUserStatus: (userId: string) => Promise<void>;
+  updateUserPlan: (userId: string, plan: 'Free' | 'Pro') => Promise<void>;
 }
 export const useUserManagementStore = create<UserManagementState>((set, get) => ({
   users: [],
@@ -32,7 +33,6 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
     set({ users: optimisticUpdate });
     try {
       await apiUpdateUserRole(userId, newRole);
-      // Optionally refetch or trust the optimistic update
     } catch (error) {
       set({ users: originalUsers, error: (error as Error).message });
       throw error;
@@ -41,11 +41,24 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
   toggleUserStatus: async (userId) => {
     const originalUsers = get().users;
     const optimisticUpdate = originalUsers.map(user =>
-      user.id === userId ? { ...user, status: user.status === 'Active' ? 'Banned' : 'Active' } : user
+      user.id === userId ? { ...user, status: user.status === 'Active' ? ('Banned' as const) : ('Active' as const) } : user
     );
     set({ users: optimisticUpdate });
     try {
       await apiToggleUserStatus(userId);
+    } catch (error) {
+      set({ users: originalUsers, error: (error as Error).message });
+      throw error;
+    }
+  },
+  updateUserPlan: async (userId, plan) => {
+    const originalUsers = get().users;
+    const optimisticUpdate = originalUsers.map(user =>
+      user.id === userId ? { ...user, plan } : user
+    );
+    set({ users: optimisticUpdate });
+    try {
+      await apiUpdateUserPlan(userId, plan);
     } catch (error) {
       set({ users: originalUsers, error: (error as Error).message });
       throw error;

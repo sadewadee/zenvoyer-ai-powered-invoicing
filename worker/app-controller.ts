@@ -85,6 +85,17 @@ export class AppController extends DurableObject<Env> {
     }
     return null;
   }
+  async updateUserPlan(userId: string, plan: 'Free' | 'Pro'): Promise<ManagedUser | null> {
+    await this.ensureLoaded();
+    const user = this.users.get(userId);
+    if (user) {
+      user.plan = plan;
+      this.users.set(userId, user);
+      await this.persist();
+      return user;
+    }
+    return null;
+  }
   // --- Session Management ---
   async addSession(sessionId: string, title?: string): Promise<void> {
     await this.ensureLoaded();
@@ -164,6 +175,14 @@ export class AppController extends DurableObject<Env> {
         if (userId && path.endsWith('/status')) {
           if (method === 'PUT') {
             const updatedUser = await this.toggleUserStatus(userId);
+            if (updatedUser) return Response.json({ success: true, data: updatedUser });
+            return Response.json({ success: false, error: 'User not found' }, { status: 404 });
+          }
+        }
+        if (userId && path.endsWith('/plan')) {
+          if (method === 'PUT') {
+            const { plan } = await request.json<{ plan: 'Free' | 'Pro' }>();
+            const updatedUser = await this.updateUserPlan(userId, plan);
             if (updatedUser) return Response.json({ success: true, data: updatedUser });
             return Response.json({ success: false, error: 'User not found' }, { status: 404 });
           }
