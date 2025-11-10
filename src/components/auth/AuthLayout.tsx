@@ -12,10 +12,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-primary-900 dark:text-primary-50">
-            Welcome to Zenitho
+            Welcome to Zenvoyer
           </h1>
           <p className="text-muted-foreground mt-2">
-            AI-Powered Invoicing for Modern Businesses
+            Professional Invoice Management Platform
           </p>
         </div>
         {children}

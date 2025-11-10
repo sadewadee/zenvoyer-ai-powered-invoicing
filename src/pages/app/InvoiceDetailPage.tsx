@@ -36,7 +36,7 @@ export function InvoiceDetailPage() {
     doc.text(`Invoice #: ${invoice.invoiceNumber}`, 14, 30);
     doc.text(`Issue Date: ${format(invoice.issueDate, 'MMM d, yyyy')}`, 14, 35);
     doc.text(`Due Date: ${format(invoice.dueDate, 'MMM d, yyyy')}`, 14, 40);
-    doc.text("Zenitho Inc.", 200, 22, { align: 'right' });
+    doc.text("Zenvoyer Inc.", 200, 22, { align: 'right' });
     doc.text("123 Cloud Ave, Internet City", 200, 27, { align: 'right' });
     doc.setFont("helvetica", "bold");
     doc.text("Bill To:", 14, 60);

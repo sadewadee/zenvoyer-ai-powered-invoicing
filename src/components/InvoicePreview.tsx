@@ -26,7 +26,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
             <p className="text-muted-foreground mt-1">Invoice #: {invoice.invoiceNumber}</p>
           </div>
           <div className="text-right">
-            <h2 className="text-xl font-semibold text-gray-800">Zenitho Inc.</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Zenvoyer Inc.</h2>
             <p className="text-sm text-muted-foreground">123 Cloud Ave, Internet City</p>
           </div>
         </header>
@@ -105,7 +105,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
         </section>
         <footer className="mt-12 pt-6 border-t text-center text-muted-foreground text-sm">
           <p>Thank you for your business!</p>
-          <p>If you have any questions, please contact us at support@zenitho.app.</p>
+          <p>If you have any questions, please contact us at support@zenvoyer.app.</p>
         </footer>
       </CardContent>
     </Card>

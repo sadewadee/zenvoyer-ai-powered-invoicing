@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuthStore } from "../../lib/auth";
+import { useAuthStore } from "@/stores/use-auth-store";
 import { Toaster, toast } from 'sonner';
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -48,7 +48,6 @@ export function ProfileSettings() {
                     <FormMessage />
                   </FormItem>
                 } />
-
               <FormField
                 control={form.control}
                 name="email"
@@ -61,7 +60,6 @@ export function ProfileSettings() {
                     <FormMessage />
                   </FormItem>
                 } />
-
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
               <Button type="submit">Save Changes</Button>
@@ -70,5 +68,4 @@ export function ProfileSettings() {
         </Form>
       </Card>
     </>);
-
 }

@@ -15,7 +15,7 @@ export function PublicInvoicePage() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-primary-900 dark:text-primary-50">
-            Zenitho
+            Zenvoyer
           </h1>
         </div>
         <Button asChild variant="outline">
@@ -38,7 +38,7 @@ export function PublicInvoicePage() {
         )}
       </main>
       <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <p>Powered by Zenitho - AI Invoicing</p>
+        <p>Powered by Zenvoyer - Professional Invoicing</p>
       </footer>
     </div>
   );

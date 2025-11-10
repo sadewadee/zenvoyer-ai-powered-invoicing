@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuthStore } from "../lib/auth";
+import { useAuthStore } from "@/stores/use-auth-store";
 export function HomePage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -17,9 +17,8 @@ export function HomePage() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-foreground">Initializing Zenitho...</div>
+        <div className="text-foreground">Initializing Zenvoyer...</div>
       </div>);
-
   }
   return <Outlet />;
 }

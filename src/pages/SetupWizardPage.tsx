@@ -68,7 +68,7 @@ export function SetupWizardPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-700 mb-4">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-primary-900 dark:text-primary-50">Welcome to Zenitho!</h1>
+          <h1 className="text-3xl font-bold text-primary-900 dark:text-primary-50">Welcome to Zenvoyer!</h1>
           <p className="text-muted-foreground mt-2">Let's get your account set up in just a few steps.</p>
         </div>
         <Progress value={progress} className="mb-8" />

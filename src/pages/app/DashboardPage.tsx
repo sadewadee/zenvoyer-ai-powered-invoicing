@@ -1,4 +1,4 @@
-import { useAuthStore } from "../../lib/auth";
+import { useAuthStore } from "@/stores/use-auth-store";
 import { UserDashboard } from "@/components/dashboard/UserDashboard";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { SuperAdminDashboard } from "@/components/dashboard/SuperAdminDashboard";
@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const invoices = useInvoiceStore((state) => state.invoices);
-
   const isNewUser = user?.role === 'USER' && invoices.length <= 2;
   const renderDashboard = () => {
     switch (user?.role) {
@@ -29,10 +28,8 @@ export function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold">
-
         Welcome back, {user?.name}!
       </motion.h1>
       {renderDashboard()}
     </div>);
-
 }

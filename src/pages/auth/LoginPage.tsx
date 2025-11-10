@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthLayout } from '@/components/auth/AuthLayout';
-import { useAuthStore } from "../../lib/auth";
+import { useAuthStore } from "@/stores/use-auth-store";
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');

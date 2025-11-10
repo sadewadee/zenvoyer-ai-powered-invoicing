@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Star } from "lucide-react";
 import { useUserManagementStore } from "@/stores/use-user-management-store";
-import { useAuthStore } from "../../lib/auth";
+import { useAuthStore } from "@/stores/use-auth-store";
 import { Toaster, toast } from "sonner";
 const plans = [
 {
@@ -14,7 +14,6 @@ const plans = [
   "Up to 10 Clients",
   "Up to 10 Products",
   "Basic Reporting"],
-
   cta: "Your Current Plan"
 },
 {
@@ -28,10 +27,8 @@ const plans = [
   "Advanced Reporting & Profit Tracking",
   "Team Management (Sub-users)",
   "Payment Gateway Integration"],
-
   cta: "Upgrade to Pro"
 }];
-
 export function SubscriptionSettings() {
   const currentUserId = useAuthStore((state) => state.user?.id);
   const users = useUserManagementStore((state) => state.users);
@@ -78,7 +75,6 @@ export function SubscriptionSettings() {
               <Button className="w-full" variant="outline" onClick={handleManageBilling}>
                     Manage Billing
                   </Button> :
-
               <Button className="w-full" onClick={handleUpgrade}>
                     {plan.cta}
                   </Button>
@@ -89,5 +85,4 @@ export function SubscriptionSettings() {
         </CardContent>
       </Card>
     </>);
-
 }

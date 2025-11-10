@@ -53,7 +53,7 @@ export function Sidebar() {
       <div className="flex-1 flex flex-col overflow-y-auto">
         <div className={cn("flex items-center h-16 px-6", isCollapsed ? "justify-center" : "justify-between")}>
           {!isCollapsed && (
-            <span className="text-2xl font-bold text-white">Zenitho</span>
+            <span className="text-2xl font-bold text-white">Zenvoyer</span>
           )}
           <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className="hover:bg-primary-700 text-primary-200 hover:text-white">
             {isCollapsed ? <ChevronsRight className="h-5 w-5" /> : <ChevronsLeft className="h-5 w-5" />}

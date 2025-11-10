@@ -23,7 +23,7 @@ export function UserDashboard({ isNewUser }: UserDashboardProps) {
     .reduce((acc, inv) => acc + inv.total, 0);
   const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue').length;
   const kpiCards = [
-    { title: "Total Revenue", icon: DollarSign, value: `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, change: "All time" },
+    { title: "Total Revenue", icon: DollarSign, value: `${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, change: "All time" },
     { title: "Clients", icon: Users, value: clients.length.toString(), change: "Total clients" },
     { title: "Paid Invoices", icon: FileText, value: invoices.filter(inv => inv.status === 'Paid').length.toString(), change: `out of ${invoices.length}` },
     { title: "Overdue", icon: Activity, value: overdueInvoices.toString(), change: `${overdueInvoices > 0 ? 'Action required' : 'All clear!'}` },
@@ -34,7 +34,7 @@ export function UserDashboard({ isNewUser }: UserDashboardProps) {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="bg-primary-800 text-primary-50 border-primary-700">
             <CardHeader>
-              <CardTitle>Get Started with Zenitho</CardTitle>
+              <CardTitle>Get Started with Zenvoyer</CardTitle>
               <CardDescription className="text-primary-200">You're all set! Here are a few things you can do to get started.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col md:flex-row gap-4">

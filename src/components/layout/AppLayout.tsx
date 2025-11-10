@@ -19,7 +19,7 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
           </div>
           <footer className="p-4 text-center text-xs text-muted-foreground border-t">
             <p>
-              © {new Date().getFullYear()} Zenitho. All rights reserved. Built with ❤️ at Cloudflare.
+              © {new Date().getFullYear()} Zenvoyer. All rights reserved. Built with ❤️ at Cloudflare.
             </p>
             <p className="mt-1">
               AI capabilities have usage limits across all users. Please use them responsibly.
