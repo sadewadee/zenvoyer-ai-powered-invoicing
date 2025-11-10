@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { BusinessSettings } from "@/components/settings/BusinessSettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 export function SettingsPage() {
   return (
     <div className="space-y-8">
@@ -24,15 +24,7 @@ export function SettingsPage() {
           <TeamSettings />
         </TabsContent>
         <TabsContent value="subscription">
-          <Card>
-            <CardHeader>
-              <CardTitle>Manage Subscription</CardTitle>
-              <CardDescription>View your current plan and billing details.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Subscription management functionality will be implemented in a future phase.</p>
-            </CardContent>
-          </Card>
+          <SubscriptionSettings />
         </TabsContent>
       </Tabs>
     </div>

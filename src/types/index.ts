@@ -55,4 +55,5 @@ export interface ManagedUser {
   role: UserRole;
   status: 'Active' | 'Banned';
   createdAt: Date;
+  plan: 'Free' | 'Pro';
 }

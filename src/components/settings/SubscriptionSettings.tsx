@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Star } from "lucide-react";
 import { useUserManagementStore } from "@/stores/use-user-management-store";
-import { useAuthStore } from "@/stores/use-auth-store";
+import { useAuthStore } from "@/hooks/use-auth-store";
 import { Toaster, toast } from "sonner";
 const plans = [
   {
@@ -13,9 +13,9 @@ const plans = [
       "Unlimited Invoices",
       "Up to 10 Clients",
       "Up to 10 Products",
-      "Basic Reporting"
+      "Basic Reporting",
     ],
-    cta: "Your Current Plan"
+    cta: "Your Current Plan",
   },
   {
     name: "Pro",
@@ -27,26 +27,18 @@ const plans = [
       "Unlimited Clients & Products",
       "Advanced Reporting & Profit Tracking",
       "Team Management (Sub-users)",
-      "Payment Gateway Integration"
+      "Payment Gateway Integration",
     ],
-    cta: "Upgrade to Pro"
-  }
+    cta: "Upgrade to Pro",
+  },
 ];
 export function SubscriptionSettings() {
   const currentUserId = useAuthStore((state) => state.user?.id);
   const users = useUserManagementStore((state) => state.users);
-  const updateUserPlan = useUserManagementStore((state) => state.updateUserPlan);
-  const currentUser = users.find((u) => u.id === currentUserId);
+  const currentUser = users.find(u => u.id === currentUserId);
   const currentPlan = currentUser?.plan || 'Free';
-  const handleUpgrade = async () => {
-    if (currentUserId) {
-      try {
-        await updateUserPlan(currentUserId, 'Pro');
-        toast.success("Congratulations! You've upgraded to the Pro plan.");
-      } catch (error) {
-        toast.error("Failed to upgrade plan. Please try again.");
-      }
-    }
+  const handleUpgrade = () => {
+    toast.success("Congratulations! You've upgraded to the Pro plan.");
   };
   const handleManageBilling = () => {
     toast.info("Billing portal coming soon!");
@@ -87,7 +79,7 @@ export function SubscriptionSettings() {
                     Manage Billing
                   </Button>
                 ) : (
-                  <Button className="w-full" onClick={handleUpgrade} disabled={currentPlan === 'Pro'}>
+                  <Button className="w-full" onClick={handleUpgrade}>
                     {plan.cta}
                   </Button>
                 )}

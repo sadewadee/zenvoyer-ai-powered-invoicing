@@ -1,3 +1,4 @@
+import { useUserManagementStore } from "@/stores/use-user-management-store";
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER' | 'SUB_USER';
 export interface User {
   id: string;
@@ -6,19 +7,21 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
 }
-// Mock user database
-const users: Record<string, User> = {
-  'user@zenitho.app': { id: 'user-123', name: 'Alex Johnson', email: 'user@zenitho.app', role: 'USER', avatarUrl: 'https://i.pravatar.cc/150?u=user@zenitho.app' },
-  'admin@zenitho.app': { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenitho.app', role: 'ADMIN', avatarUrl: 'https://i.pravatar.cc/150?u=admin@zenitho.app' },
-  'super@zenitho.app': { id: 'super-789', name: 'Sam Chen', email: 'super@zenitho.app', role: 'SUPER_ADMIN', avatarUrl: 'https://i.pravatar.cc/150?u=super@zenitho.app' },
-};
 const SESSION_KEY = 'zenitho_user_session';
 export const authService = {
   login: async (email: string): Promise<User | null> => {
     // Simulate API delay
     await new Promise(res => setTimeout(res, 500));
-    const user = users[email];
-    if (user) {
+    const allUsers = useUserManagementStore.getState().users;
+    const managedUser = allUsers.find(u => u.email === email);
+    if (managedUser && managedUser.status === 'Active') {
+      const user: User = {
+        id: managedUser.id,
+        name: managedUser.name,
+        email: managedUser.email,
+        role: managedUser.role,
+        avatarUrl: `https://i.pravatar.cc/150?u=${managedUser.email}`
+      };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
       return user;
     }
@@ -39,4 +42,17 @@ export const authService = {
       return null;
     }
   },
+  getUserByEmail: (email: string): User | null => {
+    const allUsers = useUserManagementStore.getState().users;
+    const managedUser = allUsers.find(u => u.email === email);
+    if (managedUser) {
+      return {
+        id: managedUser.id,
+        name: managedUser.name,
+        email: managedUser.email,
+        role: managedUser.role,
+      };
+    }
+    return null;
+  }
 };
