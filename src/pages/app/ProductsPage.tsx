@@ -17,7 +17,7 @@ import type { Product } from "@/types";
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().optional(),
-  unitPrice: z.number().min(0.01, "Price must be greater than 0.").default(0.01),
+  unitPrice: z.coerce.number().min(0.01, "Price must be greater than 0."),
   category: z.string().optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -28,14 +28,14 @@ export function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", unitPrice: 0.01, category: "" },
+    defaultValues: { name: "", description: "", unitPrice: undefined, category: "" },
   });
   const handleOpenForm = (product?: Product) => {
     setSelectedProduct(product);
     if (product) {
       form.reset(product);
     } else {
-      form.reset({ name: "", description: "", unitPrice: 0.01, category: "" });
+      form.reset({ name: "", description: "", unitPrice: undefined, category: "" });
     }
     setIsFormOpen(true);
   };
@@ -47,7 +47,8 @@ export function ProductsPage() {
   const onSubmit = (values: ProductFormValues) => {
     const productData = {
       ...values,
-      description: values.description || '', // Ensure description is a string
+      description: values.description || '',
+      category: values.category || '',
     };
     if (selectedProduct) {
       updateProduct({ ...selectedProduct, ...productData });
@@ -138,7 +139,7 @@ export function ProductsPage() {
                 <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="Describe the product or service" /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="unitPrice" render={({ field }) => (
-                <FormItem><FormLabel>Unit Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Unit Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(e.target.value)} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem><FormLabel>Category</FormLabel><FormControl><Input {...field} placeholder="e.g., Service, Software" /></FormControl><FormMessage /></FormItem>
