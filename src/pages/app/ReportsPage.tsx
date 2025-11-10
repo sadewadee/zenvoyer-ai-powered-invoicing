@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { DollarSign, TrendingUp, TrendingDown, Scale } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useInvoiceStore } from "@/stores/use-invoice-store";
+import { useSubscription } from "@/hooks/use-subscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 const chartData = [
   { name: 'Jan', revenue: 4000, profit: 2400 },
   { name: 'Feb', revenue: 3000, profit: 1398 },
@@ -11,7 +13,11 @@ const chartData = [
   { name: 'Jun', revenue: 5500, profit: 3800 },
 ];
 export function ReportsPage() {
+  const { isPro } = useSubscription();
   const invoices = useInvoiceStore(state => state.invoices);
+  if (!isPro) {
+    return <UpgradePrompt featureName="Profit Reporting" isPage />;
+  }
   const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
   const totalRevenue = paidInvoices.reduce((acc, inv) => acc + inv.total, 0);
   const totalCost = paidInvoices.reduce((acc, inv) =>

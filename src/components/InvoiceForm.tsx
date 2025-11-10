@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -17,6 +17,7 @@ import { useClientStore } from '@/stores/use-client-store';
 import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSubscription } from '@/hooks/use-subscription';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
@@ -45,6 +46,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const updateInvoice = useInvoiceStore(state => state.updateInvoice);
   const getNextInvoiceNumber = useInvoiceStore(state => state.getNextInvoiceNumber);
   const { can } = usePermissions();
+  const { isPro } = useSubscription();
   const readOnly = !can('invoices:edit');
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
@@ -279,7 +281,8 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
               <FormField control={form.control} name="amountPaid" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Amount Paid</FormLabel>
-                  <FormControl><Input type="number" {...field} disabled={readOnly} /></FormControl>
+                  <FormControl><Input type="number" {...field} disabled={readOnly || !isPro} /></FormControl>
+                  {!isPro && <FormDescription className="text-xs">Partial payments are a Pro feature.</FormDescription>}
                 </FormItem>
               )} />
               <div className="flex justify-between font-bold text-lg text-primary-700 dark:text-primary-400"><span>Balance Due</span><span>${balanceDue.toFixed(2)}</span></div>

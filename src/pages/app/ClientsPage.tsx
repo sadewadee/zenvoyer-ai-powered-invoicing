@@ -15,6 +15,9 @@ import { useClientStore } from "@/stores/use-client-store";
 import type { Client } from "@/types";
 import { Toaster, toast } from "sonner";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useSubscription } from "@/hooks/use-subscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 const clientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
@@ -25,6 +28,7 @@ type ClientFormValues = z.infer<typeof clientSchema>;
 export function ClientsPage() {
   const { clients, addClient, updateClient, deleteClient } = useClientStore();
   const { can } = usePermissions();
+  const { isPro } = useSubscription();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
@@ -65,9 +69,6 @@ export function ClientsPage() {
     setIsDeleteAlertOpen(false);
     setSelectedClient(undefined);
   };
-  const handleImport = () => {
-    toast.info("Client import feature coming soon!");
-  };
   const handleExport = () => {
     toast.success("Client data exported successfully!");
   };
@@ -78,8 +79,29 @@ export function ClientsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Clients</h1>
           <div className="flex gap-2">
-            {can('clients:create') && <Button variant="outline" onClick={handleImport}><Upload className="mr-2 h-4 w-4" /> Import</Button>}
-            {can('clients:view') && <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>}
+            <TooltipProvider>
+              {isPro ? (
+                <>
+                  {can('clients:create') && <Button variant="outline" disabled><Upload className="mr-2 h-4 w-4" /> Import</Button>}
+                  {can('clients:view') && <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>}
+                </>
+              ) : (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" disabled><Upload className="mr-2 h-4 w-4" /> Import</Button>
+                    </TooltipTrigger>
+                    <TooltipContent><UpgradePrompt featureName="Client Import" /></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" disabled><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    </TooltipTrigger>
+                    <TooltipContent><UpgradePrompt featureName="Client Export" /></TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </TooltipProvider>
             {can('clients:create') && <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> New Client</Button>}
           </div>
         </div>

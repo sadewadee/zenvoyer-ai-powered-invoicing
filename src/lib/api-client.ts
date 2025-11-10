@@ -43,6 +43,7 @@ export const getManagedUsers = () => api.get<ManagedUser[]>('/api/users');
 export const updateUserRole = (userId: string, role: UserRole) => api.put<ManagedUser>(`/api/users/${userId}/role`, { role });
 export const toggleUserStatus = (userId: string) => api.put<ManagedUser>(`/api/users/${userId}/status`);
 export const updateUserPlan = (userId: string, plan: 'Free' | 'Pro') => api.put<ManagedUser>(`/api/users/${userId}/plan`, { plan });
+export const updateUserProfile = (userId: string, profileData: { name: string; email: string }) => api.put<ManagedUser>(`/api/users/${userId}/profile`, profileData);
 // Business Data API
 const prepareInvoicePayload = (invoice: any) => ({
   ...invoice,

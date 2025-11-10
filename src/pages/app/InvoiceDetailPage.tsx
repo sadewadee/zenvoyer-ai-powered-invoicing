@@ -8,10 +8,12 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
 import { Toaster, toast } from 'sonner';
+import { useSubscription } from '@/hooks/use-subscription';
 export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const getInvoiceById = useInvoiceStore((state) => state.getInvoiceById);
+  const { isPro } = useSubscription();
   const invoice = id ? getInvoiceById(id) : undefined;
   const handleSendInvoice = () => {
     toast.success(`Invoice ${invoice?.invoiceNumber} sent successfully!`);
@@ -117,7 +119,7 @@ export function InvoiceDetailPage() {
             <InvoicePreview invoice={invoice} />
           </div>
           <div className="lg:col-span-1">
-            <InvoiceActivityLog activityLog={invoice.activityLog} />
+            {isPro && <InvoiceActivityLog activityLog={invoice.activityLog} />}
           </div>
         </div>
       </div>

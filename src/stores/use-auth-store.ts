@@ -9,8 +9,9 @@ interface AuthState {
   signup: (name: string, email: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => void;
+  updateProfile: (profileData: { name: string; email: string }) => Promise<void>;
 }
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
@@ -57,6 +58,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, isAuthenticated: true, isLoading: false });
     } else {
       set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+  updateProfile: async (profileData: { name: string; email: string }) => {
+    const { user } = get();
+    if (!user) throw new Error("User not authenticated");
+    const originalUser = { ...user };
+    const optimisticUser = { ...user, ...profileData };
+    set({ user: optimisticUser });
+    try {
+      await api.updateUserProfile(user.id, profileData);
+      // Also update session storage
+      authService.login(profileData.email);
+    } catch (error) {
+      set({ user: originalUser });
+      throw error;
     }
   },
 }));

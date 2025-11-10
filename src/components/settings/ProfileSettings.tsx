@@ -14,6 +14,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 export function ProfileSettings() {
   const user = useAuthStore((state) => state.user);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -21,9 +22,13 @@ export function ProfileSettings() {
       email: user?.email || ''
     }
   });
-  const onSubmit = (values: ProfileFormValues) => {
-    console.log('Profile updated:', values);
-    toast.success('Profile updated successfully!');
+  const onSubmit = async (values: ProfileFormValues) => {
+    try {
+      await updateProfile(values);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      toast.error((error as Error).message || 'Failed to update profile.');
+    }
   };
   return (
     <>
