@@ -1,67 +1,40 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ProfileSettings } from "@/components/settings/ProfileSettings";
-import { BusinessSettings } from "@/components/settings/BusinessSettings";
-import { TeamSettings } from "@/components/settings/TeamSettings";
-import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
-import { PaymentSettings } from "@/components/settings/PaymentSettings";
-import { ThemeSettings } from "@/components/settings/ThemeSettings";
-import { SupportSettings } from "@/components/settings/SupportSettings";
-import { usePermissions } from "@/hooks/use-permissions";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
-import { FeatureGate } from "@/components/FeatureGate";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function SettingsPage() {
-  const { can } = usePermissions();
-  const proTabs = [
-    { value: 'team', label: 'Team', component: <TeamSettings />, permission: can('team:manage'), featureName: 'Team Management' },
-    { value: 'payments', label: 'Payments', component: <PaymentSettings />, permission: true, featureName: 'Payment Gateways' },
-    { value: 'theme', label: 'Theme', component: <ThemeSettings />, permission: true, featureName: 'Theme Customization' },
-  ];
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Settings</h1>
-      <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className="flex flex-wrap h-auto justify-start">
+      <Tabs defaultValue="profile">
+        <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="business">Business</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
-          <TooltipProvider>
-            {proTabs.map(tab => (
-              tab.permission && (
-                <FeatureGate
-                  key={tab.value}
-                  requiredPlan="Pro"
-                  fallback={
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <TabsTrigger value={tab.value} disabled>{tab.label}</TabsTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <UpgradePrompt featureName={tab.featureName} />
-                      </TooltipContent>
-                    </Tooltip>
-                  }
-                >
-                  <TabsTrigger value={tab.value}>{tab.label}</TabsTrigger>
-                </FeatureGate>
-              )
-            ))}
-          </TooltipProvider>
-          <TabsTrigger value="support">Help & Support</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
         </TabsList>
-        <TabsContent value="profile"><ProfileSettings /></TabsContent>
-        <TabsContent value="business"><BusinessSettings /></TabsContent>
-        <TabsContent value="subscription"><SubscriptionSettings /></TabsContent>
-        {proTabs.map(tab => (
-          tab.permission && (
-            <TabsContent key={tab.value} value={tab.value}>
-              <FeatureGate requiredPlan="Pro" fallback={<UpgradePrompt featureName={tab.featureName} isPage />}>
-                {tab.component}
-              </FeatureGate>
-            </TabsContent>
-          )
-        ))}
-        <TabsContent value="support"><SupportSettings /></TabsContent>
+        <TabsContent value="profile">
+          <Card className="mt-4">
+            <CardHeader><CardTitle>Your Profile</CardTitle></CardHeader>
+            <CardContent><p>Profile settings form placeholder...</p></CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="business">
+          <Card className="mt-4">
+            <CardHeader><CardTitle>Business Details</CardTitle></CardHeader>
+            <CardContent><p>Business settings form placeholder...</p></CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="subscription">
+          <Card className="mt-4">
+            <CardHeader><CardTitle>Manage Subscription</CardTitle></CardHeader>
+            <CardContent><p>Subscription details placeholder...</p></CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="team">
+          <Card className="mt-4">
+            <CardHeader><CardTitle>Team Members</CardTitle></CardHeader>
+            <CardContent><p>Sub-user management placeholder...</p></CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
