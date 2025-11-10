@@ -17,7 +17,7 @@ import type { Product } from "@/types";
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().optional(),
-  unitPrice: z.coerce.number({ invalid_type_error: "Price must be a number." }).min(0.01, "Price must be greater than 0."),
+  unitPrice: z.coerce.number().min(0.01, "Price must be greater than 0."),
   category: z.string().optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -53,12 +53,7 @@ export function ProductsPage() {
     if (selectedProduct) {
       updateProduct({ ...selectedProduct, ...productData });
     } else {
-      addProduct({
-        name: productData.name,
-        description: productData.description,
-        unitPrice: productData.unitPrice,
-        category: productData.category,
-      });
+      addProduct(productData);
     }
     handleCloseForm();
   };

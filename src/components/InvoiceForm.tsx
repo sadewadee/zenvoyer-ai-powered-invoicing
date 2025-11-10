@@ -19,7 +19,7 @@ import type { Invoice, Client } from '@/types';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
-  quantity: z.coerce.number().min(0.01, 'Quantity must be > 0').default(1),
+  quantity: z.coerce.number().min(1, 'Quantity must be > 0').default(1),
   unitPrice: z.coerce.number().min(0.01, 'Price must be > 0').default(0.01),
 });
 const invoiceSchema = z.object({
@@ -85,22 +85,38 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       ...item,
       total: (item.quantity || 0) * (item.unitPrice || 0),
     }));
-    const invoicePayload = {
-      clientId: selectedClient.id,
-      issueDate: data.issueDate,
-      dueDate: data.dueDate,
-      lineItems: finalLineItems,
-      discount: data.discount,
-      tax: data.tax,
-      amountPaid: data.amountPaid,
-      status: data.status,
-      subtotal,
-      total,
-      activityLog: invoice?.activityLog || [],
-    };
     if (invoice) {
-      await updateInvoice({ ...invoice, ...invoicePayload, client: selectedClient });
+      const invoicePayload = {
+        ...invoice,
+        clientId: selectedClient.id,
+        client: selectedClient,
+        issueDate: data.issueDate.toISOString(),
+        dueDate: data.dueDate.toISOString(),
+        lineItems: finalLineItems,
+        discount: data.discount,
+        tax: data.tax,
+        amountPaid: data.amountPaid,
+        status: data.status,
+        subtotal,
+        total,
+      };
+      await updateInvoice(invoicePayload);
     } else {
+      const invoicePayload = {
+        client: selectedClient,
+        clientId: selectedClient.id,
+        issueDate: data.issueDate.toISOString(),
+        dueDate: data.dueDate.toISOString(),
+        lineItems: finalLineItems,
+        discount: data.discount,
+        tax: data.tax,
+        amountPaid: data.amountPaid,
+        status: data.status,
+        subtotal,
+        total,
+        invoiceNumber: `INV-${Date.now()}`, // Placeholder for invoice number generation
+        activityLog: [],
+      };
       await addInvoice(invoicePayload);
     }
     onClose();
