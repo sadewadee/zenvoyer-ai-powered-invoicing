@@ -12,7 +12,7 @@ export function usePermissions() {
       permissions: new Set<Permission>(),
       can: () => false,
       hasRole: () => false,
-      businessStage: 'new',
+      businessStage: 'new' as const,
     };
   }
   const subUserRecord = user.role === 'SUB_USER'

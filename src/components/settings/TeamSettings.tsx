@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useTeamStore } from '@/stores/use-team-store';
 import type { SubUser, Permission } from '@/types';
 import { Toaster, toast } from 'sonner';
+import { SUB_USER_TEMPLATES } from '@/lib/permissions';
 const userPermissions: { id: Permission; label: string; group: string }[] = [
   { id: 'dashboard:view', label: 'View Dashboard', group: 'General' },
   { id: 'invoices:view', label: 'View Invoices', group: 'Invoices' },
@@ -114,6 +116,13 @@ export function TeamSettings() {
       toast.error((error as Error).message);
     }
   };
+  const applyTemplate = (templateKey: string) => {
+    const template = SUB_USER_TEMPLATES[templateKey];
+    if (template) {
+      const newPermissions = { ...defaultPermissions, ...template.permissions };
+      form.setValue('permissions', newPermissions as any);
+    }
+  };
   return (
     <>
       <Toaster position="top-right" />
@@ -196,6 +205,23 @@ export function TeamSettings() {
                   <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!selectedMember} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
+              {!selectedMember && (
+                <FormItem>
+                  <FormLabel>Permission Template</FormLabel>
+                  <Select onValueChange={applyTemplate}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Apply a template..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(SUB_USER_TEMPLATES).map(([key, template]) => (
+                        <SelectItem key={key} value={key}>{template.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
               <div>
                 <FormLabel>Permissions</FormLabel>
                 <div className="mt-2 rounded-md border p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-64 overflow-y-auto">

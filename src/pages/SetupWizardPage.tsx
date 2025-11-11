@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Sparkles, Building, User, Check } from 'lucide-react';
 import { useClientStore } from '@/stores/use-client-store';
+import { useAuthStore } from '@/stores/use-auth-store';
 const businessSchema = z.object({
   companyName: z.string().min(2, 'Company name is required.'),
   address: z.string().min(10, 'Please enter a full address.'),
@@ -32,6 +33,7 @@ export function SetupWizardPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
   const addClient = useClientStore(state => state.addClient);
+  const updateBusinessStage = useAuthStore(state => state.updateBusinessStage);
   const businessForm = useForm<BusinessFormValues>({
     resolver: zodResolver(businessSchema),
     defaultValues: { companyName: '', address: '' },
@@ -57,7 +59,8 @@ export function SetupWizardPage() {
       setCurrentStep(s => s + 1);
     }
   };
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    await updateBusinessStage('intermediate');
     navigate('/app/dashboard');
   };
   const progress = (currentStep / steps.length) * 100;

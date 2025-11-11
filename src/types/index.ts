@@ -77,6 +77,7 @@ export interface ManagedUser {
   status: 'Active' | 'Banned';
   createdAt: Date;
   plan: 'Free' | 'Pro';
+  businessStage: 'new' | 'intermediate' | 'advanced';
 }
 export interface PaymentGateway {
   name: 'Xendit' | 'Midtrans' | 'PayPal' | 'Stripe';

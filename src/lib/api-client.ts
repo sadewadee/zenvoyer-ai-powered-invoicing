@@ -44,6 +44,7 @@ export const updateUserRole = (userId: string, role: UserRole) => api.put<Manage
 export const toggleUserStatus = (userId: string) => api.put<ManagedUser>(`/api/users/${userId}/status`);
 export const updateUserPlan = (userId: string, plan: 'Free' | 'Pro') => api.put<ManagedUser>(`/api/users/${userId}/plan`, { plan });
 export const updateUserProfile = (userId: string, profileData: { name: string; email: string }) => api.put<ManagedUser>(`/api/users/${userId}/profile`, profileData);
+export const updateUserBusinessStage = (userId: string, stage: 'new' | 'intermediate' | 'advanced') => api.put<ManagedUser>(`/api/users/${userId}/stage`, { stage });
 // Platform Settings API
 export const getPlatformSettings = () => api.get<PlatformSettings>('/api/platform/settings');
 export const updatePlatformSettings = (settings: Partial<PlatformSettings>) => api.put<PlatformSettings>('/api/platform/settings', settings);

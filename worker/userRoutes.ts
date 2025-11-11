@@ -34,7 +34,7 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
             const url = new URL(c.req.url);
             url.pathname = url.pathname.replace('/api/data', '');
             const req = c.req.raw;
-            const body = req.method === 'POST' || req.method === 'PUT' ? await req.json() : undefined;
+            const body: any = req.method === 'POST' || req.method === 'PUT' ? await req.json() : undefined;
             if (body && url.pathname === '/invoices' && req.method === 'POST') {
                 body.userId = userId;
             }
@@ -86,10 +86,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         return controller.fetch(c.req.raw);
     });
     // --- Debug Routes ---
-    app.get('/api/debug/users', async (c) => {
-        const controller = getAppController(c.env);
-        return controller.fetch(c.req.raw);
-    });
     app.put('/api/users/:id/role', async (c) => {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);

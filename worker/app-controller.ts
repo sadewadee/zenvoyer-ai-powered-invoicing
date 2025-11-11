@@ -208,12 +208,7 @@ export class AppController extends DurableObject<Env> {
     const method = request.method;
     const path = url.pathname;
     try {
-      if (path.startsWith('/api/debug/users')) {
-        if (method === 'GET') {
-          const users = await this.listUsers();
-          return Response.json({ success: true, data: users });
-        }
-      }
+
       if (path.startsWith('/api/platform/settings')) {
         if (method === 'GET') {
           const settings = await this.getPlatformSettings();

@@ -11,6 +11,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => void;
   updateProfile: (profileData: { name: string; email: string }) => Promise<void>;
+  updateBusinessStage: (stage: 'new' | 'intermediate' | 'advanced') => Promise<void>;
 }
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -82,6 +83,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // The login service already sets the new user in state and session storage.
     } catch (error) {
       set({ user: originalUser });
+      throw error;
+    }
+  },
+  updateBusinessStage: async (stage) => {
+    const { user } = get();
+    if (!user) throw new Error("User not authenticated");
+    try {
+      const updatedUser = await api.updateUserBusinessStage(user.id, stage);
+      const newUserState = { ...user, businessStage: updatedUser.businessStage };
+      set({ user: newUserState });
+      sessionStorage.setItem('zenvoyer_user_session', JSON.stringify(newUserState));
+    } catch (error) {
+      console.error("Failed to update business stage:", error);
       throw error;
     }
   },
