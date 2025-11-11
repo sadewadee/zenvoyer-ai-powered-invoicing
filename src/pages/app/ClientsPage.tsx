@@ -18,6 +18,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 const clientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
@@ -25,8 +26,30 @@ const clientSchema = z.object({
   phone: z.string().min(5, "Phone number is too short."),
 });
 type ClientFormValues = z.infer<typeof clientSchema>;
+const ClientsTableSkeleton = () => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Name</TableHead>
+        <TableHead>Email</TableHead>
+        <TableHead>Phone</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+          <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 export function ClientsPage() {
-  const { clients, addClient, updateClient, deleteClient } = useClientStore();
+  const { clients, addClient, updateClient, deleteClient, isLoading } = useClientStore();
   const { can } = usePermissions();
   const { isPro } = useSubscription();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -134,7 +157,9 @@ export function ClientsPage() {
             <CardTitle>All Clients</CardTitle>
           </CardHeader>
           <CardContent>
-            {clients.length === 0 ? (
+            {isLoading ? (
+              <ClientsTableSkeleton />
+            ) : clients.length === 0 ? (
               <div className="text-center py-16">
                 <Users className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold">No Clients Found</h3>

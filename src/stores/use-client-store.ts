@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import type { Client } from '@/types';
 import { getClients, addClient as apiAddClient, updateClient as apiUpdateClient, deleteClient as apiDeleteClient } from '@/lib/api-client';
 interface ClientState {
@@ -21,7 +22,9 @@ export const useClientStore = create<ClientState>((set, get) => ({
       const clients = await getClients();
       set({ clients, isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, isLoading: false });
+      toast.error("Failed to load clients. Please try again later.");
     }
   },
   getClientById: (id) => get().clients.find(c => c.id === id),

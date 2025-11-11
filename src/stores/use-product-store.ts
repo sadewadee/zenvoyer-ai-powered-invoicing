@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import type { Product } from '@/types';
 import { getProducts, addProduct as apiAddProduct, updateProduct as apiUpdateProduct, deleteProduct as apiDeleteProduct } from '@/lib/api-client';
 interface ProductState {
@@ -21,7 +22,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const products = await getProducts();
       set({ products, isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, isLoading: false });
+      toast.error("Failed to load products. Please try again later.");
     }
   },
   getProductById: (id) => get().products.find(p => p.id === id),

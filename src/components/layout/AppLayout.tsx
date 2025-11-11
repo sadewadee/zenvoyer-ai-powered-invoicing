@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Toaster } from 'sonner';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { usePageTitle } from '@/hooks/use-page-title';
@@ -37,6 +38,7 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
         </main>
       </div>
       <AIChatAssistant />
+      <Toaster position="top-right" />
     </div>
   );
 }

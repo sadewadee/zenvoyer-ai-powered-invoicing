@@ -15,6 +15,7 @@ import { PlusCircle, MoreHorizontal, Edit, Trash2, Package } from "lucide-react"
 import { useProductStore } from "@/stores/use-product-store";
 import type { Product } from "@/types";
 import { usePermissions } from "@/hooks/use-permissions";
+import { Skeleton } from "@/components/ui/skeleton";
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   description: z.string().optional(),
@@ -22,8 +23,30 @@ const productSchema = z.object({
   category: z.string().optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
+const ProductsTableSkeleton = () => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Name</TableHead>
+        <TableHead>Category</TableHead>
+        <TableHead className="text-right">Unit Price</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+          <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+          <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 export function ProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = useProductStore();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading } = useProductStore();
   const { can } = usePermissions();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -86,7 +109,9 @@ export function ProductsPage() {
           <CardTitle>All Products</CardTitle>
         </CardHeader>
         <CardContent>
-          {products.length === 0 ? (
+          {isLoading ? (
+            <ProductsTableSkeleton />
+          ) : products.length === 0 ? (
             <div className="text-center py-16">
               <Package className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">No Products or Services</h3>

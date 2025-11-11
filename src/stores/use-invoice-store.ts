@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import type { Invoice, InvoiceStatus, ActivityLogEntry } from '@/types';
 import { getInvoices, addInvoice as apiAddInvoice, updateInvoice as apiUpdateInvoice, deleteInvoice as apiDeleteInvoice } from '@/lib/api-client';
 interface InvoiceState {
@@ -22,7 +23,9 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
       const invoices = await getInvoices();
       set({ invoices: invoices.map(i => ({...i, issueDate: new Date(i.issueDate), dueDate: new Date(i.dueDate)})), isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, isLoading: false });
+      toast.error("Failed to load invoices. Please try again later.");
     }
   },
   getInvoiceById: (id) => get().invoices.find(inv => inv.id === id),

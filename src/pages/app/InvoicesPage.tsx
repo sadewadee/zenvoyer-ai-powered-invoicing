@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { usePermissions } from "@/hooks/use-permissions";
+import { Skeleton } from "@/components/ui/skeleton";
 const statusColors: Record<InvoiceStatus, string> = {
   Paid: "border-transparent bg-status-paid-bg text-status-paid",
   Unpaid: "border-transparent bg-status-unpaid-bg text-status-unpaid",
@@ -23,10 +24,37 @@ const statusColors: Record<InvoiceStatus, string> = {
   Draft: "border-transparent bg-status-draft-bg text-status-draft",
   Partial: "border-transparent bg-status-partial-bg text-status-partial"
 };
+const InvoicesTableSkeleton = () => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Number</TableHead>
+        <TableHead>Client</TableHead>
+        <TableHead className="text-right">Amount</TableHead>
+        <TableHead className="text-center">Status</TableHead>
+        <TableHead>Due Date</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+          <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
+          <TableCell className="text-center"><Skeleton className="h-6 w-16 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+          <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 export function InvoicesPage() {
   const navigate = useNavigate();
   const { can } = usePermissions();
   const invoices = useInvoiceStore((state) => state.invoices);
+  const isLoading = useInvoiceStore((state) => state.isLoading);
   const deleteInvoice = useInvoiceStore((state) => state.deleteInvoice);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -125,7 +153,9 @@ export function InvoicesPage() {
           <CardTitle>All Invoices</CardTitle>
         </CardHeader>
         <CardContent>
-          {invoices.length === 0 ? (
+          {isLoading ? (
+            <InvoicesTableSkeleton />
+          ) : invoices.length === 0 ? (
             <div className="text-center py-16">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">No Invoices Yet</h3>
