@@ -7,7 +7,7 @@ interface InvoiceState {
   error: string | null;
   fetchInvoices: () => Promise<void>;
   getInvoiceById: (id: string) => Invoice | undefined;
-  addInvoice: (invoice: Omit<Invoice, 'id'>) => Promise<void>;
+  addInvoice: (invoice: Omit<Invoice, 'id'>, userId: string) => Promise<void>;
   updateInvoice: (invoice: Invoice) => Promise<void>;
   deleteInvoice: (id: string) => Promise<void>;
   getNextInvoiceNumber: () => string;
@@ -26,8 +26,8 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     }
   },
   getInvoiceById: (id) => get().invoices.find(inv => inv.id === id),
-  addInvoice: async (invoiceData) => {
-    const newInvoice = await apiAddInvoice(invoiceData);
+  addInvoice: async (invoiceData, userId) => {
+    const newInvoice = await apiAddInvoice(invoiceData, userId);
     set(state => ({ invoices: [...state.invoices, {...newInvoice, issueDate: new Date(newInvoice.issueDate), dueDate: new Date(newInvoice.dueDate)}] }));
   },
   updateInvoice: async (updatedInvoice) => {
@@ -46,7 +46,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     if (paymentMade > 0) {
       newActivityLog.push({
         date: new Date(),
-        action: `Payment of $${paymentMade.toFixed(2)} received.`,
+        action: `Payment of ${paymentMade.toFixed(2)} received.`,
       });
     }
     // Auto-update status based on payment, but don't override a manual status change in the same update

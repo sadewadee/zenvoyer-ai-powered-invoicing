@@ -18,6 +18,7 @@ import { useInvoiceStore } from '@/stores/use-invoice-store';
 import type { Invoice, Client } from '@/types';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useAuthStore } from '@/stores/use-auth-store';
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required'),
@@ -47,6 +48,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const getNextInvoiceNumber = useInvoiceStore(state => state.getNextInvoiceNumber);
   const { can } = usePermissions();
   const { isPro } = useSubscription();
+  const user = useAuthStore(state => state.user);
   const readOnly = !can('invoices:edit');
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
@@ -108,6 +110,10 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
       };
       await updateInvoice(payload);
     } else {
+      if (!user) {
+        console.error("User not found");
+        return;
+      }
       const payload: Omit<Invoice, 'id'> = {
         invoiceNumber: getNextInvoiceNumber(),
         client: selectedClient,
@@ -122,7 +128,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
         total,
         activityLog: [{ date: new Date(), action: 'Invoice Created' }],
       };
-      await addInvoice(payload);
+      await addInvoice(payload, user.id);
     }
     onClose();
   }

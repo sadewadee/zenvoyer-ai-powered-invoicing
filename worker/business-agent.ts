@@ -1,7 +1,8 @@
 import { Agent } from 'agents';
 import { v4 as uuidv4 } from 'uuid';
 import type { Env } from './core-utils';
-import type { BusinessState, Invoice, Client, Product, SubUser, Settings, ActivityLogEntry } from './types';
+import type { BusinessState, Invoice, Client, Product, SubUser, Settings, ActivityLogEntry, ManagedUser } from './types';
+import { getAppController } from './core-utils';
 const calculateTotals = (lineItems: any[], discount: number, tax: number) => {
   const subtotal = lineItems.reduce((acc, item) => acc + item.total, 0);
   const discountAmount = subtotal * (discount / 100);
@@ -43,7 +44,7 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
   getInvoices(): Response {
     return Response.json({ success: true, data: this.state.invoices });
   }
-  addInvoice(invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'activityLog'>): Response {
+  async addInvoice(invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'activityLog'> & { userId: string }): Promise<Response> {
     const { subtotal, total } = calculateTotals(invoiceData.lineItems, invoiceData.discount, invoiceData.tax);
     const newInvoice: Invoice = {
       ...invoiceData,
@@ -54,6 +55,12 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
       activityLog: [{ date: new Date().toISOString(), action: 'Invoice Created' }],
     };
     this.setState({ ...this.state, invoices: [...this.state.invoices, newInvoice] });
+    // Check and update user's business stage
+    const controller = getAppController(this.env);
+    const userResponse = await controller.fetch(new Request(`https://.../users/${invoiceData.userId}/stage-check`, { method: 'POST' }));
+    if (!userResponse.ok) {
+      console.error(`Failed to update business stage for user ${invoiceData.userId}`);
+    }
     return Response.json({ success: true, data: newInvoice });
   }
   updateInvoice(updatedInvoice: Invoice): Response {
@@ -70,7 +77,7 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     // Check for payment
     const paymentMade = updatedInvoice.amountPaid - originalInvoice.amountPaid;
     if (paymentMade > 0) {
-      newActivityLog.push({ date: now, action: `Payment of $${paymentMade.toFixed(2)} received.` });
+      newActivityLog.push({ date: now, action: `Payment of ${paymentMade.toFixed(2)} received.` });
     }
     const { subtotal, total } = calculateTotals(updatedInvoice.lineItems, updatedInvoice.discount, updatedInvoice.tax);
     const finalInvoice = {
@@ -154,8 +161,8 @@ export class BusinessAgent extends Agent<Env, BusinessState> {
     return Response.json({ success: true, data: this.state.settings });
   }
   updateSettings(newSettings: Partial<Settings>): Response {
-    const updatedSettings = { 
-      ...this.state.settings, 
+    const updatedSettings = {
+      ...this.state.settings,
       ...newSettings,
       theme: { ...this.state.settings.theme, ...newSettings.theme },
     };

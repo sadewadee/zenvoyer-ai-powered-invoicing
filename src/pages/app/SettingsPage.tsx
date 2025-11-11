@@ -8,11 +8,10 @@ import { PaymentSettings } from "@/components/settings/PaymentSettings";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { SupportSettings } from "@/components/settings/SupportSettings";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { FeatureGate } from "@/components/FeatureGate";
 export function SettingsPage() {
   const { can } = usePermissions();
-  const { isPro } = useSubscription();
   const proTabs = [
     { value: 'team', label: 'Team', component: <TeamSettings />, permission: can('team:manage'), featureName: 'Team Management' },
     { value: 'payments', label: 'Payments', component: <PaymentSettings />, permission: true, featureName: 'Payment Gateways' },
@@ -29,18 +28,22 @@ export function SettingsPage() {
           <TooltipProvider>
             {proTabs.map(tab => (
               tab.permission && (
-                isPro ? (
-                  <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
-                ) : (
-                  <Tooltip key={tab.value}>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger value={tab.value} disabled>{tab.label}</TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <UpgradePrompt featureName={tab.featureName} />
-                    </TooltipContent>
-                  </Tooltip>
-                )
+                <FeatureGate
+                  key={tab.value}
+                  requiredPlan="Pro"
+                  fallback={
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <TabsTrigger value={tab.value} disabled>{tab.label}</TabsTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <UpgradePrompt featureName={tab.featureName} />
+                      </TooltipContent>
+                    </Tooltip>
+                  }
+                >
+                  <TabsTrigger value={tab.value}>{tab.label}</TabsTrigger>
+                </FeatureGate>
               )
             ))}
           </TooltipProvider>
@@ -52,7 +55,9 @@ export function SettingsPage() {
         {proTabs.map(tab => (
           tab.permission && (
             <TabsContent key={tab.value} value={tab.value}>
-              {isPro ? tab.component : <UpgradePrompt featureName={tab.featureName} isPage />}
+              <FeatureGate requiredPlan="Pro" fallback={<UpgradePrompt featureName={tab.featureName} isPage />}>
+                {tab.component}
+              </FeatureGate>
             </TabsContent>
           )
         ))}

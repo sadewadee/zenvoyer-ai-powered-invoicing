@@ -33,10 +33,15 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
             const agent = await getAgentByName<Env, BusinessAgent>(c.env.BUSINESS_AGENT, userId);
             const url = new URL(c.req.url);
             url.pathname = url.pathname.replace('/api/data', '');
+            const req = c.req.raw;
+            const body = req.method === 'POST' || req.method === 'PUT' ? await req.json() : undefined;
+            if (body && url.pathname === '/invoices' && req.method === 'POST') {
+                body.userId = userId;
+            }
             return agent.fetch(new Request(url.toString(), {
-                method: c.req.method,
-                headers: c.req.header(),
-                body: c.req.method === 'GET' || c.req.method === 'DELETE' ? undefined : c.req.raw.body,
+                method: req.method,
+                headers: req.headers,
+                body: body ? JSON.stringify(body) : undefined,
             }));
         } catch (error) {
             console.error('Business agent routing error:', error);
@@ -93,6 +98,10 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         return controller.fetch(c.req.raw);
     });
     app.put('/api/users/:id/profile', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.put('/api/users/:id/stage', async (c) => {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);
     });

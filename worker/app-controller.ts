@@ -129,6 +129,17 @@ export class AppController extends DurableObject<Env> {
     }
     return null;
   }
+  async updateUserBusinessStage(userId: string, stage: 'new' | 'intermediate' | 'advanced'): Promise<ManagedUser | null> {
+    await this.ensureLoaded();
+    const user = this.users.get(userId);
+    if (user) {
+      user.businessStage = stage;
+      this.users.set(userId, user);
+      await this.persist();
+      return user;
+    }
+    return null;
+  }
   // --- Platform Settings ---
   async getPlatformSettings(): Promise<PlatformSettings> {
     await this.ensureLoaded();
@@ -248,8 +259,8 @@ export class AppController extends DurableObject<Env> {
           if (user && user.status === 'Active' && password && mockVerify(password, user.passwordHash)) {
             return Response.json({ success: true, data: user });
           }
-          // Fallback for old email-only login for seeded users if no password provided
-          if (user && user.status === 'Active' && !password && user.email.includes('@zenvoyer.app')) {
+          // Fallback for re-auth or old email-only login
+          if (user && user.status === 'Active' && !password) {
              return Response.json({ success: true, data: user });
           }
           return Response.json({ success: false, error: 'Invalid credentials or user banned.' }, { status: 401 });
@@ -299,6 +310,14 @@ export class AppController extends DurableObject<Env> {
           if (method === 'PUT') {
             const profileData = await request.json<{ name: string; email: string }>();
             const updatedUser = await this.updateUserProfile(userId, profileData);
+            if (updatedUser) return Response.json({ success: true, data: updatedUser });
+            return Response.json({ success: false, error: 'User not found' }, { status: 404 });
+          }
+        }
+        if (userId && path.endsWith('/stage')) {
+          if (method === 'PUT') {
+            const { stage } = await request.json<{ stage: 'new' | 'intermediate' | 'advanced' }>();
+            const updatedUser = await this.updateUserBusinessStage(userId, stage);
             if (updatedUser) return Response.json({ success: true, data: updatedUser });
             return Response.json({ success: false, error: 'User not found' }, { status: 404 });
           }

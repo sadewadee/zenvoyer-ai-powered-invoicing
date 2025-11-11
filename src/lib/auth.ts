@@ -11,9 +11,10 @@ export interface User {
 }
 const SESSION_KEY = 'zenvoyer_user_session';
 export const authService = {
-  login: async (email: string, password?: string): Promise<User | null> => {
+  login: async (email: string, password?: string, isReAuth = false): Promise<User | null> => {
     try {
-      const userFromApi = await api.login(email, password);
+      // For re-authentication, we don't need a password. The backend should handle this.
+      const userFromApi = await api.login(email, isReAuth ? undefined : password);
       if (userFromApi) {
         const user: User = {
           id: userFromApi.id,

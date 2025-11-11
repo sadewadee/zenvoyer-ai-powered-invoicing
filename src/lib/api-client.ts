@@ -60,7 +60,7 @@ const prepareInvoicePayload = (invoice: any) => ({
   client: undefined,
 });
 export const getInvoices = () => api.get<Invoice[]>('/api/data/invoices');
-export const addInvoice = (invoice: Omit<Invoice, 'id'>) => api.post<Invoice>('/api/data/invoices', prepareInvoicePayload(invoice));
+export const addInvoice = (invoice: Omit<Invoice, 'id'>, userId: string) => api.post<Invoice>('/api/data/invoices', { ...prepareInvoicePayload(invoice), userId });
 export const updateInvoice = (invoice: Invoice) => api.put<Invoice>(`/api/data/invoices`, prepareInvoicePayload(invoice));
 export const deleteInvoice = (id: string) => api.delete(`/api/data/invoices/${id}`);
 export const getClients = () => api.get<Client[]>('/api/data/clients');

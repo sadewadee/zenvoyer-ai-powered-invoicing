@@ -72,8 +72,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: optimisticUser });
     try {
       await api.updateUserProfile(user.id, profileData);
-      // Also update session storage
-      authService.login(profileData.email);
+      // Re-authenticate to get the full, updated user object from the server
+      const updatedUser = await authService.login(profileData.email, undefined, true);
+      if (!updatedUser) {
+        // This case is tricky. Revert to original user if re-auth fails.
+        set({ user: originalUser });
+        throw new Error("Failed to refresh user session after profile update.");
+      }
+      // The login service already sets the new user in state and session storage.
     } catch (error) {
       set({ user: originalUser });
       throw error;
