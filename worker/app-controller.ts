@@ -208,7 +208,13 @@ export class AppController extends DurableObject<Env> {
     const method = request.method;
     const path = url.pathname;
     try {
-      if (path.startsWith('/platform/settings')) {
+      if (path.startsWith('/api/debug/users')) {
+        if (method === 'GET') {
+          const users = await this.listUsers();
+          return Response.json({ success: true, data: users });
+        }
+      }
+      if (path.startsWith('/api/platform/settings')) {
         if (method === 'GET') {
           const settings = await this.getPlatformSettings();
           return Response.json({ success: true, data: settings });
@@ -219,7 +225,7 @@ export class AppController extends DurableObject<Env> {
           return Response.json({ success: true, data: settings });
         }
       }
-      if (path.startsWith('/support/tickets')) {
+      if (path.startsWith('/api/support/tickets')) {
         if (method === 'GET') {
           const tickets = await this.listSupportTickets();
           return Response.json({ success: true, data: tickets });
@@ -229,7 +235,7 @@ export class AppController extends DurableObject<Env> {
           const ticket = await this.createSupportTicket(body);
           return Response.json({ success: true, data: ticket });
         }
-        const ticketId = path.split('/')[3];
+        const ticketId = path.split('/')[4]; // /api/support/tickets/:id/status
         if (ticketId && path.endsWith('/status')) {
           if (method === 'PUT') {
             const { status } = await request.json<{ status: SupportTicketStatus }>();
@@ -239,7 +245,7 @@ export class AppController extends DurableObject<Env> {
           }
         }
       }
-      if (path.startsWith('/sessions')) {
+      if (path.startsWith('/api/sessions')) {
         if (method === 'GET') return Response.json({ success: true, data: await this.listSessions() });
         if (method === 'POST') {
           const { sessionId, title } = await request.json<{ sessionId: string; title: string }>();
@@ -247,12 +253,12 @@ export class AppController extends DurableObject<Env> {
           return Response.json({ success: true });
         }
         if (method === 'DELETE') {
-          const sessionId = path.split('/')[2];
+          const sessionId = path.split('/')[3];
           const deleted = await this.removeSession(sessionId);
           return Response.json({ success: deleted });
         }
       }
-      if (path.startsWith('/auth/login')) {
+      if (path.startsWith('/api/auth/login')) {
         if (method === 'POST') {
           const { email, password } = await request.json<{ email: string; password?: string }>();
           const user = await this.getUserByEmail(email);
@@ -266,7 +272,7 @@ export class AppController extends DurableObject<Env> {
           return Response.json({ success: false, error: 'Invalid credentials or user banned.' }, { status: 401 });
         }
       }
-      if (path.startsWith('/auth/signup')) {
+      if (path.startsWith('/api/auth/signup')) {
         if (method === 'POST') {
           const { name, email, password } = await request.json<{ name: string; email: string; password?: string }>();
           try {
@@ -277,12 +283,12 @@ export class AppController extends DurableObject<Env> {
           }
         }
       }
-      if (path.startsWith('/users')) {
+      if (path.startsWith('/api/users')) {
         if (method === 'GET') {
           const users = await this.listUsers();
           return Response.json({ success: true, data: users });
         }
-        const userId = path.split('/')[2];
+        const userId = path.split('/')[3];
         if (userId && path.endsWith('/role')) {
           if (method === 'PUT') {
             const { role } = await request.json<{ role: UserRole }>();
@@ -320,6 +326,15 @@ export class AppController extends DurableObject<Env> {
             const updatedUser = await this.updateUserBusinessStage(userId, stage);
             if (updatedUser) return Response.json({ success: true, data: updatedUser });
             return Response.json({ success: false, error: 'User not found' }, { status: 404 });
+          }
+        }
+        if (userId && path.endsWith('/stage-check')) {
+          if (method === 'POST') {
+            const user = this.users.get(userId);
+            if (user && user.businessStage === 'new') {
+              await this.updateUserBusinessStage(userId, 'intermediate');
+            }
+            return Response.json({ success: true });
           }
         }
       }

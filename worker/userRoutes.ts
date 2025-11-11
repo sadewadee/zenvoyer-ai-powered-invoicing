@@ -85,6 +85,11 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);
     });
+    // --- Debug Routes ---
+    app.get('/api/debug/users', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
     app.put('/api/users/:id/role', async (c) => {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);
