@@ -109,10 +109,11 @@ export interface ManagedUser {
   email: string;
   passwordHash: string;
   role: UserRole;
-  status: 'Active' | 'Banned';
+  status: 'Active' | 'Banned' | 'Pending';
   createdAt: string; // ISO string
   plan: 'Free' | 'Pro';
   businessStage: 'new' | 'intermediate' | 'advanced';
+  parentUserId?: string;
 }
 // Support Ticket Types
 export type SupportTicketStatus = 'Open' | 'In Progress' | 'Resolved';

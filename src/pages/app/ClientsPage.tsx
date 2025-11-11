@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Upload, Download } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Upload, Download, Users } from "lucide-react";
 import { useClientStore } from "@/stores/use-client-store";
 import type { Client } from "@/types";
 import { Toaster, toast } from "sonner";
@@ -134,41 +134,57 @@ export function ClientsPage() {
             <CardTitle>All Clients</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  {(can('clients:edit') || can('clients:delete')) && <TableHead className="text-right">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.name}</TableCell>
-                    <TableCell>{client.email}</TableCell>
-                    <TableCell>{client.phone}</TableCell>
-                    {(can('clients:edit') || can('clients:delete')) && (
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {can('clients:edit') && <DropdownMenuItem onClick={() => handleOpenForm(client)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
-                            {can('clients:delete') && <DropdownMenuItem onClick={() => handleDelete(client)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
+            {clients.length === 0 ? (
+              <div className="text-center py-16">
+                <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">No Clients Found</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Add your first client to start sending invoices.
+                </p>
+                {can('clients:create') && (
+                  <Button className="mt-6" onClick={() => handleOpenForm()}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add New Client
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    {(can('clients:edit') || can('clients:delete')) && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.name}</TableCell>
+                      <TableCell>{client.email}</TableCell>
+                      <TableCell>{client.phone}</TableCell>
+                      {(can('clients:edit') || can('clients:delete')) && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {can('clients:edit') && <DropdownMenuItem onClick={() => handleOpenForm(client)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
+                              {can('clients:delete') && <DropdownMenuItem onClick={() => handleDelete(client)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
         <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleCloseForm()}>

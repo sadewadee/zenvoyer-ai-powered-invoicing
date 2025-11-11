@@ -12,6 +12,7 @@ import 'jspdf-autotable';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { SignupPage } from '@/pages/auth/SignupPage';
+import { AcceptInvitationPage } from '@/pages/auth/AcceptInvitationPage';
 import { ProtectedRoutes } from '@/components/ProtectedRoutes';
 import { DashboardPage } from '@/pages/app/DashboardPage';
 import { InvoicesPage } from '@/pages/app/InvoicesPage';
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     element: <SignupPage />,
+  },
+  {
+    path: "/accept-invitation/:token",
+    element: <AcceptInvitationPage />,
   },
   {
     path: "/share/invoice/:id",

@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Package } from "lucide-react";
 import { useProductStore } from "@/stores/use-product-store";
 import type { Product } from "@/types";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -86,41 +86,57 @@ export function ProductsPage() {
           <CardTitle>All Products</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                { (can('products:edit') || can('products:delete')) && <TableHead className="text-right">Actions</TableHead> }
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell className="text-right">${product.unitPrice.toFixed(2)}</TableCell>
-                  { (can('products:edit') || can('products:delete')) && (
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {can('products:edit') && <DropdownMenuItem onClick={() => handleOpenForm(product)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
-                          {can('products:delete') && <DropdownMenuItem onClick={() => handleDelete(product)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  )}
+          {products.length === 0 ? (
+            <div className="text-center py-16">
+              <Package className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No Products or Services</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Add items you frequently sell to speed up invoice creation.
+              </p>
+              {can('products:create') && (
+                <Button className="mt-6" onClick={() => handleOpenForm()}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add New Product
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Unit Price</TableHead>
+                  { (can('products:edit') || can('products:delete')) && <TableHead className="text-right">Actions</TableHead> }
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>{product.category}</TableCell>
+                    <TableCell className="text-right">${product.unitPrice.toFixed(2)}</TableCell>
+                    { (can('products:edit') || can('products:delete')) && (
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {can('products:edit') && <DropdownMenuItem onClick={() => handleOpenForm(product)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
+                            {can('products:delete') && <DropdownMenuItem onClick={() => handleDelete(product)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
       <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleCloseForm()}>

@@ -38,6 +38,7 @@ const api = {
 // Auth API
 export const login = (email: string, password?: string) => api.post<User>('/api/auth/login', { email, password });
 export const signup = (name: string, email: string, password?: string) => api.post<ManagedUser>('/api/auth/signup', { name, email, password });
+export const acceptInvitation = (token: string, password: string) => api.post<{ success: boolean }>('/api/auth/accept-invitation', { token, password });
 // User Management API
 export const getManagedUsers = () => api.get<ManagedUser[]>('/api/users');
 export const updateUserRole = (userId: string, role: UserRole) => api.put<ManagedUser>(`/api/users/${userId}/role`, { role });

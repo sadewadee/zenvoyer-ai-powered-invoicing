@@ -51,6 +51,7 @@ export class AppController extends DurableObject<Env> {
       { id: 'user-123', name: 'Alex Johnson', email: 'user@zenvoyer.app', passwordHash: mockHash('password'), role: 'USER', status: 'Active', createdAt: new Date('2023-01-15').toISOString(), plan: 'Pro', businessStage: 'intermediate' },
       { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenvoyer.app', passwordHash: mockHash('password'), role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20').toISOString(), plan: 'Pro', businessStage: 'advanced' },
       { id: 'super-789', name: 'Sam Chen', email: 'super@zenvoyer.app', passwordHash: mockHash('password'), role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01').toISOString(), plan: 'Pro', businessStage: 'advanced' },
+      { id: 'pending-user-token', name: 'Pending User', email: 'pending@zenvoyer.app', passwordHash: '', role: 'SUB_USER', status: 'Pending', createdAt: new Date().toISOString(), plan: 'Pro', businessStage: 'new', parentUserId: 'user-123' },
     ];
     initialUsers.forEach(user => this.users.set(user.id, user));
   }
@@ -208,7 +209,6 @@ export class AppController extends DurableObject<Env> {
     const method = request.method;
     const path = url.pathname;
     try {
-
       if (path.startsWith('/api/platform/settings')) {
         if (method === 'GET') {
           const settings = await this.getPlatformSettings();
@@ -251,6 +251,21 @@ export class AppController extends DurableObject<Env> {
           const sessionId = path.split('/')[3];
           const deleted = await this.removeSession(sessionId);
           return Response.json({ success: deleted });
+        }
+      }
+      if (path.startsWith('/api/auth/accept-invitation')) {
+        if (method === 'POST') {
+          const { token, password } = await request.json<{ token: string; password: string }>();
+          await this.ensureLoaded();
+          const user = this.users.get(token);
+          if (!user || user.status !== 'Pending') {
+            return Response.json({ success: false, error: 'Invalid or expired invitation token.' }, { status: 400 });
+          }
+          user.passwordHash = mockHash(password);
+          user.status = 'Active';
+          this.users.set(token, user);
+          await this.persist();
+          return Response.json({ success: true });
         }
       }
       if (path.startsWith('/api/auth/login')) {

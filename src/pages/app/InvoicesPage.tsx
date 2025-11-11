@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Eye, Download } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Eye, Download, FileText } from "lucide-react";
 import { useInvoiceStore } from "@/stores/use-invoice-store";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import type { Invoice, InvoiceStatus } from "@/types";
@@ -125,47 +125,63 @@ export function InvoicesPage() {
           <CardTitle>All Invoices</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Number</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoices.map((invoice) =>
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{invoice.client.name}</TableCell>
-                  <TableCell className="text-right">${invoice.total.toFixed(2)}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className={cn("font-semibold", statusColors[invoice.status])}>{invoice.status}</Badge>
-                  </TableCell>
-                  <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/app/invoices/${invoice.id}`)}><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
-                        {can('invoices:edit') && <DropdownMenuItem onClick={() => handleEdit(invoice)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
-                        <DropdownMenuItem onClick={() => handleDownloadPdf(invoice)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
-                        {can('invoices:delete') && <DropdownMenuItem onClick={() => handleDelete(invoice)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+          {invoices.length === 0 ? (
+            <div className="text-center py-16">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No Invoices Yet</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Get started by creating your first invoice.
+              </p>
+              {can('invoices:create') && (
+                <Button className="mt-6" onClick={() => { setSelectedInvoice(undefined); setIsFormOpen(true); }}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create New Invoice
+                </Button>
               )}
-            </TableBody>
-          </Table>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Number</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) =>
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{invoice.client.name}</TableCell>
+                    <TableCell className="text-right">${invoice.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className={cn("font-semibold", statusColors[invoice.status])}>{invoice.status}</Badge>
+                    </TableCell>
+                    <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/app/invoices/${invoice.id}`)}><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
+                          {can('invoices:edit') && <DropdownMenuItem onClick={() => handleEdit(invoice)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>}
+                          <DropdownMenuItem onClick={() => handleDownloadPdf(invoice)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                          {can('invoices:delete') && <DropdownMenuItem onClick={() => handleDelete(invoice)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
