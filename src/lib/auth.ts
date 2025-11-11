@@ -14,7 +14,7 @@ export const authService = {
   login: async (email: string, password?: string, isReAuth = false): Promise<User | null> => {
     try {
       // For re-authentication, we don't need a password. The backend should handle this.
-      const userFromApi = await api.login(email, isReAuth ? undefined : password);
+      const { user: userFromApi } = await api.login(email, isReAuth ? undefined : password);
       if (userFromApi) {
         const user: User = {
           id: userFromApi.id,

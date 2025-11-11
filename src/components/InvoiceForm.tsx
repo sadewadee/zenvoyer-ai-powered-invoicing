@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm, useFieldArray, useWatch, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -42,6 +43,7 @@ interface InvoiceFormProps {
   onClose: () => void;
 }
 export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const clients = useClientStore(state => state.clients);
   const addInvoice = useInvoiceStore(state => state.addInvoice);
   const updateInvoice = useInvoiceStore(state => state.updateInvoice);
@@ -85,52 +87,57 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
   const total = subtotal - discountAmount + taxAmount;
   const balanceDue = total - (watchedValues.amountPaid || 0);
   async function onSubmit(data: InvoiceFormValues) {
-    const selectedClient = clients.find(c => c.id === data.clientId);
-    if (!selectedClient) {
-      console.error("Client not found");
-      return;
-    }
-    const finalLineItems = data.lineItems.map(item => ({
-      ...item,
-      total: (item.quantity || 0) * (item.unitPrice || 0),
-    }));
-    if (invoice) {
-      const payload: Invoice = {
-        ...invoice,
-        client: selectedClient,
-        issueDate: data.issueDate,
-        dueDate: data.dueDate,
-        lineItems: finalLineItems,
-        discount: data.discount,
-        tax: data.tax,
-        amountPaid: data.amountPaid,
-        status: data.status,
-        subtotal,
-        total,
-      };
-      await updateInvoice(payload);
-    } else {
-      if (!user) {
-        console.error("User not found");
+    setIsSubmitting(true);
+    try {
+      const selectedClient = clients.find(c => c.id === data.clientId);
+      if (!selectedClient) {
+        console.error("Client not found");
         return;
       }
-      const payload: Omit<Invoice, 'id'> = {
-        invoiceNumber: getNextInvoiceNumber(),
-        client: selectedClient,
-        issueDate: data.issueDate,
-        dueDate: data.dueDate,
-        lineItems: finalLineItems,
-        discount: data.discount,
-        tax: data.tax,
-        amountPaid: data.amountPaid,
-        status: data.status,
-        subtotal,
-        total,
-        activityLog: [{ date: new Date(), action: 'Invoice Created' }],
-      };
-      await addInvoice(payload, user.id);
+      const finalLineItems = data.lineItems.map(item => ({
+        ...item,
+        total: (item.quantity || 0) * (item.unitPrice || 0),
+      }));
+      if (invoice) {
+        const payload: Invoice = {
+          ...invoice,
+          client: selectedClient,
+          issueDate: data.issueDate,
+          dueDate: data.dueDate,
+          lineItems: finalLineItems,
+          discount: data.discount,
+          tax: data.tax,
+          amountPaid: data.amountPaid,
+          status: data.status,
+          subtotal,
+          total,
+        };
+        await updateInvoice(payload);
+      } else {
+        if (!user) {
+          console.error("User not found");
+          return;
+        }
+        const payload: Omit<Invoice, 'id'> = {
+          invoiceNumber: getNextInvoiceNumber(),
+          client: selectedClient,
+          issueDate: data.issueDate,
+          dueDate: data.dueDate,
+          lineItems: finalLineItems,
+          discount: data.discount,
+          tax: data.tax,
+          amountPaid: data.amountPaid,
+          status: data.status,
+          subtotal,
+          total,
+          activityLog: [{ date: new Date(), action: 'Invoice Created' }],
+        };
+        await addInvoice(payload, user.id);
+      }
+      onClose();
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   }
   return (
     <Form {...form}>
@@ -317,7 +324,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          {!readOnly && <Button type="submit">{invoice ? 'Update Invoice' : 'Create Invoice'}</Button>}
+          {!readOnly && <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : (invoice ? 'Update Invoice' : 'Create Invoice')}</Button>}
         </div>
       </form>
     </Form>

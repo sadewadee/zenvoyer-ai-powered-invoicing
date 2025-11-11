@@ -11,7 +11,13 @@ type JWTPayload = {
     role: UserRole;
     parentUserId?: string;
 };
-const authMiddleware = async (c: any, next: Next) => {
+export type AppContext = {
+    Bindings: Env;
+    Variables: {
+        user: JWTPayload;
+    };
+};
+const authMiddleware = async (c: Hono<AppContext>['context'], next: Next) => {
     const authHeader = c.req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return c.json({ success: false, error: 'Unauthorized: Missing token' }, { status: 401 });
@@ -24,7 +30,7 @@ const authMiddleware = async (c: any, next: Next) => {
     c.set('user', payload);
     await next();
 };
-export function coreRoutes(app: Hono<{ Bindings: Env }>) {
+export function coreRoutes(app: Hono<AppContext>) {
     app.all('/api/chat/:sessionId/*', async (c) => {
         try {
             const sessionId = c.req.param('sessionId');
@@ -42,11 +48,11 @@ export function coreRoutes(app: Hono<{ Bindings: Env }>) {
         }
     });
 }
-export function businessRoutes(app: Hono<{ Bindings: Env }>) {
+export function businessRoutes(app: Hono<AppContext>) {
     app.use('/api/data/*', authMiddleware);
     app.all('/api/data/*', async (c) => {
         try {
-            const user = c.get('user') as JWTPayload;
+            const user = c.get('user');
             const businessId = user.role === 'SUB_USER' ? user.parentUserId : user.id;
             if (!businessId) {
                 return c.json({ success: false, error: 'Unauthorized: Invalid user scope' }, { status: 401 });
@@ -72,7 +78,7 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
         }
     });
 }
-export function userRoutes(app: Hono<{ Bindings: Env }>) {
+export function userRoutes(app: Hono<AppContext>) {
     // Public routes
     app.post('/api/auth/login', async (c) => {
         const controller = getAppController(c.env);

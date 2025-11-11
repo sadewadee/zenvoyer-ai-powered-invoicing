@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { Env } from "./core-utils";
 import { API_RESPONSES } from "./config";
-import { userRoutes, coreRoutes, businessRoutes } from "./userRoutes";
+import { userRoutes, coreRoutes, businessRoutes, AppContext } from "./userRoutes";
 import { ChatAgent } from "./agent";
 import { AppController } from "./app-controller";
 import { BusinessAgent } from "./business-agent";
@@ -23,7 +23,7 @@ export interface ClientErrorReport {
   colno?: number;
   error?: unknown;
 }
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<AppContext>();
 /** DO NOT TOUCH THE CODE BELOW THIS LINE */
 // Middleware
 app.use("*", logger());

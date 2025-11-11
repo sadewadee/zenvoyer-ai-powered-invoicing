@@ -1,6 +1,14 @@
 import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole, PlatformSettings, SupportTicket, SupportTicketStatus } from '@/types';
 import { useAuthStore } from '@/stores/use-auth-store';
 const handleResponse = async (response: Response) => {
+  if (response.status === 401) {
+    // Token is invalid or expired.
+    useAuthStore.getState().logout();
+    // Using window.location to force a full page reload to the login screen,
+    // which clears any component state.
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
   if (response.status === 204) {
     return { success: true, data: null };
   }
