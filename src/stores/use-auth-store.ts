@@ -4,6 +4,7 @@ import * as api from '@/lib/api-client';
 import { useUserManagementStore } from './use-user-management-store';
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password?: string) => Promise<boolean>;
@@ -15,14 +16,26 @@ interface AuthState {
 }
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  token: null,
   isAuthenticated: false,
   isLoading: true,
   login: async (email: string, password?: string) => {
     set({ isLoading: true });
     try {
-      const user = await authService.login(email, password);
-      if (user) {
-        set({ user, isAuthenticated: true, isLoading: false });
+      const { user: userFromApi, token } = await api.login(email, password);
+      if (userFromApi && token) {
+        const user: User = {
+          id: userFromApi.id,
+          name: userFromApi.name,
+          email: userFromApi.email,
+          role: userFromApi.role,
+          plan: userFromApi.plan,
+          businessStage: userFromApi.businessStage,
+          avatarUrl: `https://i.pravatar.cc/150?u=${userFromApi.email}`
+        };
+        sessionStorage.setItem('zenvoyer_user_session', JSON.stringify(user));
+        sessionStorage.setItem('zenvoyer_auth_token', token);
+        set({ user, token, isAuthenticated: true, isLoading: false });
         return true;
       }
       set({ isLoading: false });
@@ -36,16 +49,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signup: async (name: string, email: string, password?: string) => {
     set({ isLoading: true });
     try {
-      const newUser = await api.signup(name, email, password);
-      // Add user to admin management store
+      const { user: newUser, token } = await api.signup(name, email, password);
       useUserManagementStore.getState().addUser(newUser);
-      // Log in the new user directly from API response
       const user: User = {
         ...newUser,
         avatarUrl: `https://i.pravatar.cc/150?u=${newUser.email}`
       };
       sessionStorage.setItem('zenvoyer_user_session', JSON.stringify(user));
-      set({ user, isAuthenticated: true, isLoading: false });
+      sessionStorage.setItem('zenvoyer_auth_token', token);
+      set({ user, token, isAuthenticated: true, isLoading: false });
       return true;
     } catch (error) {
       console.error("Signup failed:", error);
@@ -54,15 +66,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
   logout: async () => {
-    await authService.logout();
-    set({ user: null, isAuthenticated: false });
+    sessionStorage.removeItem('zenvoyer_user_session');
+    sessionStorage.removeItem('zenvoyer_auth_token');
+    set({ user: null, token: null, isAuthenticated: false });
   },
   checkAuth: () => {
-    const user = authService.getCurrentUser();
-    if (user) {
-      set({ user, isAuthenticated: true, isLoading: false });
-    } else {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+    try {
+      const sessionData = sessionStorage.getItem('zenvoyer_user_session');
+      const token = sessionStorage.getItem('zenvoyer_auth_token');
+      if (sessionData && token) {
+        const user = JSON.parse(sessionData);
+        set({ user, token, isAuthenticated: true, isLoading: false });
+      } else {
+        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+      }
+    } catch (error) {
+      console.error("Failed to parse user session:", error);
+      set({ user: null, token: null, isAuthenticated: false, isLoading: false });
     }
   },
   updateProfile: async (profileData: { name: string; email: string }) => {
@@ -73,14 +93,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: optimisticUser });
     try {
       await api.updateUserProfile(user.id, profileData);
-      // Re-authenticate to get the full, updated user object from the server
-      const updatedUser = await authService.login(profileData.email, undefined, true);
-      if (!updatedUser) {
-        // This case is tricky. Revert to original user if re-auth fails.
+      const { user: updatedUser, token } = await api.login(profileData.email, undefined);
+      if (!updatedUser || !token) {
         set({ user: originalUser });
         throw new Error("Failed to refresh user session after profile update.");
       }
-      // The login service already sets the new user in state and session storage.
+      const newUserState: User = { ...updatedUser, avatarUrl: `https://i.pravatar.cc/150?u=${updatedUser.email}` };
+      sessionStorage.setItem('zenvoyer_user_session', JSON.stringify(newUserState));
+      sessionStorage.setItem('zenvoyer_auth_token', token);
+      set({ user: newUserState, token });
     } catch (error) {
       set({ user: originalUser });
       throw error;

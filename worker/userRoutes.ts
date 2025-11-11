@@ -1,10 +1,29 @@
-import { Hono } from "hono";
+import { Hono, Next } from "hono";
 import { getAgentByName } from 'agents';
 import { ChatAgent } from './agent';
 import { BusinessAgent } from './business-agent';
 import { API_RESPONSES } from './config';
 import { Env, getAppController, registerSession, unregisterSession } from "./core-utils";
-const getUserId = (c: any) => 'user-123-static';
+import { verifyToken } from "./auth";
+import type { UserRole } from "./types";
+type JWTPayload = {
+    id: string;
+    role: UserRole;
+    parentUserId?: string;
+};
+const authMiddleware = async (c: any, next: Next) => {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return c.json({ success: false, error: 'Unauthorized: Missing token' }, { status: 401 });
+    }
+    const token = authHeader.substring(7);
+    const payload = await verifyToken<JWTPayload>(token);
+    if (!payload) {
+        return c.json({ success: false, error: 'Unauthorized: Invalid token' }, { status: 401 });
+    }
+    c.set('user', payload);
+    await next();
+};
 export function coreRoutes(app: Hono<{ Bindings: Env }>) {
     app.all('/api/chat/:sessionId/*', async (c) => {
         try {
@@ -24,25 +43,29 @@ export function coreRoutes(app: Hono<{ Bindings: Env }>) {
     });
 }
 export function businessRoutes(app: Hono<{ Bindings: Env }>) {
+    app.use('/api/data/*', authMiddleware);
     app.all('/api/data/*', async (c) => {
         try {
-            const userId = getUserId(c);
-            if (!userId) {
-                return c.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+            const user = c.get('user') as JWTPayload;
+            const businessId = user.role === 'SUB_USER' ? user.parentUserId : user.id;
+            if (!businessId) {
+                return c.json({ success: false, error: 'Unauthorized: Invalid user scope' }, { status: 401 });
             }
-            const agent = await getAgentByName<Env, BusinessAgent>(c.env.BUSINESS_AGENT, userId);
+            const agent = await getAgentByName<Env, BusinessAgent>(c.env.BUSINESS_AGENT, businessId);
             const url = new URL(c.req.url);
             url.pathname = url.pathname.replace('/api/data', '');
             const req = c.req.raw;
             const body: any = req.method === 'POST' || req.method === 'PUT' ? await req.json() : undefined;
             if (body && url.pathname === '/invoices' && req.method === 'POST') {
-                body.userId = userId;
+                body.userId = user.id;
             }
-            return agent.fetch(new Request(url.toString(), {
+            const agentRequest = new Request(url.toString(), {
                 method: req.method,
                 headers: req.headers,
                 body: body ? JSON.stringify(body) : undefined,
-            }));
+            });
+            agentRequest.headers.set('X-User-Payload', JSON.stringify(user));
+            return agent.fetch(agentRequest);
         } catch (error) {
             console.error('Business agent routing error:', error);
             return c.json({ success: false, error: API_RESPONSES.AGENT_ROUTING_FAILED }, { status: 500 });
@@ -50,6 +73,24 @@ export function businessRoutes(app: Hono<{ Bindings: Env }>) {
     });
 }
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
+    // Public routes
+    app.post('/api/auth/login', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.post('/api/auth/signup', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    app.post('/api/auth/accept-invitation', async (c) => {
+        const controller = getAppController(c.env);
+        return controller.fetch(c.req.raw);
+    });
+    // Protected routes
+    app.use('/api/users/*', authMiddleware);
+    app.use('/api/platform/*', authMiddleware);
+    app.use('/api/support/*', authMiddleware);
+    app.use('/api/sessions/*', authMiddleware);
     // --- Platform Settings ---
     app.get('/api/platform/settings', async (c) => {
         const controller = getAppController(c.env);
@@ -72,20 +113,11 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);
     });
-    // --- User Auth & Management Routes ---
-    app.post('/api/auth/login', async (c) => {
-        const controller = getAppController(c.env);
-        return controller.fetch(c.req.raw);
-    });
-    app.post('/api/auth/signup', async (c) => {
-        const controller = getAppController(c.env);
-        return controller.fetch(c.req.raw);
-    });
+    // --- User Management Routes ---
     app.get('/api/users', async (c) => {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);
     });
-    // --- Debug Routes ---
     app.put('/api/users/:id/role', async (c) => {
         const controller = getAppController(c.env);
         return controller.fetch(c.req.raw);

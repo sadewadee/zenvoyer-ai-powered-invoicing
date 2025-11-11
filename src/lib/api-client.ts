@@ -1,21 +1,32 @@
 import type { Invoice, Client, Product, SubUser, Settings, ManagedUser, UserRole, PlatformSettings, SupportTicket, SupportTicketStatus } from '@/types';
-import type { User } from './auth';
+import { useAuthStore } from '@/stores/use-auth-store';
 const handleResponse = async (response: Response) => {
+  if (response.status === 204) {
+    return { success: true, data: null };
+  }
   const result = await response.json();
   if (!response.ok || !result.success) {
     throw new Error(result.error || `HTTP error! status: ${response.status}`);
   }
   return result.data;
 };
+const getHeaders = () => {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = useAuthStore.getState().token;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
 const api = {
   get: async <T>(endpoint: string): Promise<T> => {
-    const response = await fetch(endpoint);
+    const response = await fetch(endpoint, { headers: getHeaders() });
     return handleResponse(response);
   },
   post: async <T>(endpoint: string, body: any): Promise<T> => {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(body),
     });
     return handleResponse(response);
@@ -23,7 +34,7 @@ const api = {
   put: async <T>(endpoint: string, body?: any): Promise<T> => {
     const response = await fetch(endpoint, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: body ? JSON.stringify(body) : undefined,
     });
     return handleResponse(response);
@@ -31,13 +42,14 @@ const api = {
   delete: async <T>(endpoint: string): Promise<T> => {
     const response = await fetch(endpoint, {
       method: 'DELETE',
+      headers: getHeaders(),
     });
     return handleResponse(response);
   },
 };
 // Auth API
-export const login = (email: string, password?: string) => api.post<User>('/api/auth/login', { email, password });
-export const signup = (name: string, email: string, password?: string) => api.post<ManagedUser>('/api/auth/signup', { name, email, password });
+export const login = (email: string, password?: string) => api.post<{ user: ManagedUser, token: string }>('/api/auth/login', { email, password });
+export const signup = (name: string, email: string, password?: string) => api.post<{ user: ManagedUser, token: string }>('/api/auth/signup', { name, email, password });
 export const acceptInvitation = (token: string, password: string) => api.post<{ success: boolean }>('/api/auth/accept-invitation', { token, password });
 // User Management API
 export const getManagedUsers = () => api.get<ManagedUser[]>('/api/users');

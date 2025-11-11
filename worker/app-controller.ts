@@ -2,6 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { v4 as uuidv4 } from 'uuid';
 import type { SessionInfo, ManagedUser, UserRole, PlatformSettings, SupportTicket, SupportTicketStatus } from './types';
 import type { Env } from './core-utils';
+import { signToken } from './auth';
 // In a real app, use a proper hashing library like bcrypt or Argon2.
 // This is a mock for demonstration purposes.
 const mockHash = (password: string) => `hashed_${password}`;
@@ -272,12 +273,13 @@ export class AppController extends DurableObject<Env> {
         if (method === 'POST') {
           const { email, password } = await request.json<{ email: string; password?: string }>();
           const user = await this.getUserByEmail(email);
-          if (user && user.status === 'Active' && password && mockVerify(password, user.passwordHash)) {
-            return Response.json({ success: true, data: user });
-          }
-          // Fallback for re-auth or old email-only login
-          if (user && user.status === 'Active' && !password) {
-             return Response.json({ success: true, data: user });
+          const isValid = user && user.status === 'Active' && (
+            (password && mockVerify(password, user.passwordHash)) || // Password login
+            (!password) // Re-auth without password
+          );
+          if (isValid) {
+            const token = await signToken({ id: user.id, role: user.role, parentUserId: user.parentUserId });
+            return Response.json({ success: true, data: { user, token } });
           }
           return Response.json({ success: false, error: 'Invalid credentials or user banned.' }, { status: 401 });
         }
@@ -287,7 +289,8 @@ export class AppController extends DurableObject<Env> {
           const { name, email, password } = await request.json<{ name: string; email: string; password?: string }>();
           try {
             const newUser = await this.addUser({ name, email, password });
-            return Response.json({ success: true, data: newUser });
+            const token = await signToken({ id: newUser.id, role: newUser.role });
+            return Response.json({ success: true, data: { user: newUser, token } });
           } catch (e) {
             return Response.json({ success: false, error: (e as Error).message }, { status: 409 });
           }
