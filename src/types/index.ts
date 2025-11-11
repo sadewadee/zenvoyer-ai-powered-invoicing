@@ -95,6 +95,7 @@ export interface BusinessDetails {
 }
 export interface ThemeSettings {
   primaryColor: string;
+  colorScheme: 'light' | 'dark' | 'system';
 }
 export interface Settings {
   business: BusinessDetails;

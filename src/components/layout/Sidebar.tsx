@@ -5,20 +5,17 @@ import { useAuthStore } from '@/stores/use-auth-store';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { usePermissions } from '@/hooks/use-permissions';
-import { navigationConfig, NavItem } from '@/lib/navigation';
+import { generateNavigation } from '@/lib/navigation';
 export function Sidebar() {
+  const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { can, hasRole } = usePermissions();
+  const { permissions } = usePermissions();
+  const navigationConfig = generateNavigation(user, permissions);
   const handleLogout = async () => {
     await logout();
     navigate('/login');
-  };
-  const isItemVisible = (item: NavItem) => {
-    const roleCheck = item.requiredRole ? hasRole(item.requiredRole) : true;
-    const permCheck = item.requiredPermission ? can(item.requiredPermission) : true;
-    return roleCheck && permCheck;
   };
   return (
     <aside className={cn(
@@ -35,39 +32,35 @@ export function Sidebar() {
           </Button>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2">
-          {navigationConfig.map((group, groupIndex) => {
-            const visibleItems = group.items.filter(isItemVisible);
-            if (visibleItems.length === 0) return null;
-            return (
-              <div key={groupIndex} className="space-y-2">
-                {group.title && !isCollapsed && (
-                  <h3 className="px-3 pt-4 pb-2 text-xs font-semibold text-primary-300 uppercase tracking-wider">
-                    {group.title}
-                  </h3>
-                )}
-                {visibleItems.map((item) => (
-                  <NavLink
-                    key={item.name}
-                    to={item.href}
-                    end={item.href === '/app/dashboard'}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-primary-600 text-white shadow-primary'
-                          : 'text-primary-200 hover:bg-primary-700 hover:text-white',
-                        isCollapsed && "justify-center"
-                      )
-                    }
-                    title={item.name}
-                  >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    {!isCollapsed && <span className="truncate">{item.name}</span>}
-                  </NavLink>
-                ))}
-              </div>
-            );
-          })}
+          {navigationConfig.map((group, groupIndex) => (
+            <div key={groupIndex} className="space-y-2">
+              {group.title && !isCollapsed && (
+                <h3 className="px-3 pt-4 pb-2 text-xs font-semibold text-primary-300 uppercase tracking-wider">
+                  {group.title}
+                </h3>
+              )}
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  end={item.href === '/app/dashboard'}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary-600 text-white shadow-primary'
+                        : 'text-primary-200 hover:bg-primary-700 hover:text-white',
+                      isCollapsed && "justify-center"
+                    )
+                  }
+                  title={item.name}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {!isCollapsed && <span className="truncate">{item.name}</span>}
+                </NavLink>
+              ))}
+            </div>
+          ))}
         </nav>
       </div>
       <div className="px-4 py-4 border-t border-primary-700 space-y-2">

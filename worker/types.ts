@@ -83,6 +83,7 @@ export interface BusinessDetails {
 }
 export interface ThemeSettings {
   primaryColor: string;
+  colorScheme: 'light' | 'dark' | 'system';
 }
 export interface Settings {
   business: BusinessDetails;
@@ -111,6 +112,7 @@ export interface ManagedUser {
   status: 'Active' | 'Banned';
   createdAt: string; // ISO string
   plan: 'Free' | 'Pro';
+  businessStage: 'new' | 'intermediate' | 'advanced';
 }
 // Support Ticket Types
 export type SupportTicketStatus = 'Open' | 'In Progress' | 'Resolved';

@@ -48,9 +48,9 @@ export class AppController extends DurableObject<Env> {
   }
   private seedInitialUsers() {
     const initialUsers: ManagedUser[] = [
-      { id: 'user-123', name: 'Alex Johnson', email: 'user@zenvoyer.app', passwordHash: mockHash('password'), role: 'USER', status: 'Active', createdAt: new Date('2023-01-15').toISOString(), plan: 'Pro' },
-      { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenvoyer.app', passwordHash: mockHash('password'), role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20').toISOString(), plan: 'Pro' },
-      { id: 'super-789', name: 'Sam Chen', email: 'super@zenvoyer.app', passwordHash: mockHash('password'), role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01').toISOString(), plan: 'Pro' },
+      { id: 'user-123', name: 'Alex Johnson', email: 'user@zenvoyer.app', passwordHash: mockHash('password'), role: 'USER', status: 'Active', createdAt: new Date('2023-01-15').toISOString(), plan: 'Pro', businessStage: 'intermediate' },
+      { id: 'admin-456', name: 'Maria Garcia', email: 'admin@zenvoyer.app', passwordHash: mockHash('password'), role: 'ADMIN', status: 'Active', createdAt: new Date('2023-02-20').toISOString(), plan: 'Pro', businessStage: 'advanced' },
+      { id: 'super-789', name: 'Sam Chen', email: 'super@zenvoyer.app', passwordHash: mockHash('password'), role: 'SUPER_ADMIN', status: 'Active', createdAt: new Date('2023-01-01').toISOString(), plan: 'Pro', businessStage: 'advanced' },
     ];
     initialUsers.forEach(user => this.users.set(user.id, user));
   }
@@ -70,6 +70,7 @@ export class AppController extends DurableObject<Env> {
       status: 'Active',
       createdAt: new Date().toISOString(),
       plan: 'Free',
+      businessStage: 'new',
     };
     this.users.set(newUser.id, newUser);
     await this.persist();

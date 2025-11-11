@@ -6,6 +6,8 @@ export interface User {
   email: string;
   role: UserRole;
   avatarUrl?: string;
+  plan: 'Free' | 'Pro';
+  businessStage: 'new' | 'intermediate' | 'advanced';
 }
 const SESSION_KEY = 'zenvoyer_user_session';
 export const authService = {
@@ -14,7 +16,12 @@ export const authService = {
       const userFromApi = await api.login(email, password);
       if (userFromApi) {
         const user: User = {
-          ...userFromApi,
+          id: userFromApi.id,
+          name: userFromApi.name,
+          email: userFromApi.email,
+          role: userFromApi.role,
+          plan: userFromApi.plan,
+          businessStage: userFromApi.businessStage,
           avatarUrl: `https://i.pravatar.cc/150?u=${userFromApi.email}`
         };
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
