@@ -308,7 +308,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
           render={({ field }) => (
             <FormItem className="w-full max-w-xs">
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly || form.getValues('amountPaid') > 0}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly || (watchedValues.amountPaid || 0) > 0}>
                 <FormControl>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                 </FormControl>
@@ -318,7 +318,7 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {form.getValues('amountPaid') > 0 && <FormDescription className="text-xs">Status is automatically updated based on payment.</FormDescription>}
+              {(watchedValues.amountPaid || 0) > 0 && <FormDescription className="text-xs">Status is automatically updated based on payment.</FormDescription>}
             </FormItem>
           )}
         />

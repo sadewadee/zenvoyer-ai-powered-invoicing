@@ -1,4 +1,4 @@
-import { Hono, Next } from "hono";
+import { Hono, Next, Context } from "hono";
 import { getAgentByName } from 'agents';
 import { ChatAgent } from './agent';
 import { BusinessAgent } from './business-agent';
@@ -17,7 +17,7 @@ export type AppContext = {
         user: JWTPayload;
     };
 };
-const authMiddleware = async (c: Hono<AppContext>['context'], next: Next) => {
+const authMiddleware = async (c: Context<AppContext>, next: Next) => {
     const authHeader = c.req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return c.json({ success: false, error: 'Unauthorized: Missing token' }, { status: 401 });
