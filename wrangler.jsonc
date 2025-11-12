@@ -27,11 +27,11 @@
 		},
 		{
 			"tag": "v2",
-			"new_classes": ["AppController"]
+			"new_sqlite_classes": ["AppController"]
 		},
 		{
 			"tag": "v3",
-			"new_classes": ["BusinessAgent"]
+			"new_sqlite_classes": ["BusinessAgent"]
 		}
 	],
 	"assets": {
