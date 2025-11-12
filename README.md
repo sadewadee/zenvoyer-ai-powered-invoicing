@@ -1,6 +1,6 @@
 # Zenvoyer - Professional Invoice Management Platform
 An AI-powered, visually stunning invoicing platform designed for freelancers and small businesses, running entirely on Cloudflare's edge network.
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sadewadee/zenvoyer-ai-powered-invoicing)
 Zenvoyer is a production-ready, visually stunning SaaS invoicing platform designed for modern freelancers, agencies, and small businesses. Built entirely on the Cloudflare serverless stack, it leverages Workers for backend logic and Durable Objects for stateful, persistent data storage. The application features a comprehensive multi-tiered role-based access control system (Super Admin, Admin, User, Sub-User) to manage platform, support, and business operations. Core functionalities include complete invoice, client, and product management, a dynamic dashboard with key performance indicators, and a beautiful, intuitive user interface. The system is designed with a sophisticated visual identity to convey professionalism and trust. It also integrates the AI capabilities of the underlying template to offer intelligent support and agentic features.
 ## ✨ Key Features
 - **Multi-Role Architecture**: Comprehensive role-based access control for Super Admins, Admins, Users, and Sub-Users.
@@ -77,7 +77,7 @@ This project is designed for seamless deployment to Cloudflare's global network.
     ```
     Wrangler will handle the process of building the frontend assets, bundling the worker, and deploying everything to your Cloudflare account.
 3.  **Deploy with the button:**
-    [cloudflarebutton]
+    [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sadewadee/zenvoyer-ai-powered-invoicing)
 ## 📁 Project Structure
 -   `worker/`: Contains all the backend code that runs on Cloudflare Workers.
     -   `index.ts`: The entry point for the worker.
