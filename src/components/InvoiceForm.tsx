@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray, useWatch, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -81,11 +81,23 @@ export function InvoiceForm({ invoice, onClose }: InvoiceFormProps) {
     name: 'lineItems',
   });
   const watchedValues = useWatch({ control: form.control });
-  const subtotal = (watchedValues.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
-  const discountAmount = subtotal * ((watchedValues.discount || 0) / 100);
-  const taxAmount = (subtotal - discountAmount) * ((watchedValues.tax || 0) / 100);
-  const total = subtotal - discountAmount + taxAmount;
-  const balanceDue = total - (watchedValues.amountPaid || 0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [taxAmount, setTaxAmount] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [balanceDue, setBalanceDue] = useState(0);
+  useEffect(() => {
+    const newSubtotal = (watchedValues.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0), 0);
+    const newDiscountAmount = newSubtotal * ((watchedValues.discount || 0) / 100);
+    const newTaxAmount = (newSubtotal - newDiscountAmount) * ((watchedValues.tax || 0) / 100);
+    const newTotal = newSubtotal - newDiscountAmount + newTaxAmount;
+    const newBalanceDue = newTotal - (watchedValues.amountPaid || 0);
+    setSubtotal(newSubtotal);
+    setDiscountAmount(newDiscountAmount);
+    setTaxAmount(newTaxAmount);
+    setTotal(newTotal);
+    setBalanceDue(newBalanceDue);
+  }, [watchedValues]);
   async function onSubmit(data: InvoiceFormValues) {
     setIsSubmitting(true);
     try {
